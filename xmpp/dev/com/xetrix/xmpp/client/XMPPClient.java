@@ -1,5 +1,6 @@
 package com.xetrix.xmpp.client;
 
+import java.io.IOException;
 import com.xetrix.xmpp.util.Log; // DUBG
 
 public class XMPPClient {
@@ -22,7 +23,7 @@ public class XMPPClient {
 
   // XMPP Client components
   protected XMPPSocket           socket = new XMPPSocket(this);
-  protected XMPPStream           stream;
+  protected XMPPStream           stream = new XMPPStream(this);
 
   // Constructors
   public XMPPClient(String u, String p, String r, Integer pr, String host, Integer port, String serv) {
@@ -99,19 +100,23 @@ public class XMPPClient {
   public Boolean isCompressed() {
     return this.socket.compressed;
   }
+  public String getConnectionID() {
+    return this.stream.getConnectionID();
+  }
 
   public Boolean connect(XMPPSocket.Security s) {
     socket = new XMPPSocket(this);
     if (this.socket.setSecurity(s)) {
       if (this.socket.connect(this.host, this.port)) {
         this.connected = true;
-        this.initStream();
+        this.stream.initStream();
         return true;
       }
     }
     return false;
   }
 
+  // TODO: Use of values()???
   public Boolean connect(Integer s) {
     switch (s) {
       case 0: return this.connect(XMPPSocket.Security.none);
@@ -133,15 +138,16 @@ public class XMPPClient {
     this.connected = false;
     this.authenticated = false;
     this.binded = false;
-    this.stream = null;
+    this.stream = new XMPPStream(this);
     this.socket = new XMPPSocket(this);
     return true;
   }
 
   public Boolean startTLS() {
-    Boolean allowed = this.socket.getSecurity() == XMPPSocket.Security.tls;
-    if (allowed && this.socket.enableTLS()) {
-      this.initStream();
+    if (this.socket.getSecurity() == XMPPSocket.Security.tls &&
+        this.isConnected() &&
+        this.socket.enableTLS()) {
+      this.stream.initStream();
       return true;
     } else {
       return false;
@@ -158,11 +164,10 @@ public class XMPPClient {
   }
 
   void requestStartTLS(Boolean required) {
-    Boolean allowed = this.socket.getSecurity() == XMPPSocket.Security.tls;
-    if (allowed) {
+    if (this.socket.getSecurity() == XMPPSocket.Security.tls) {
       this.stream.write("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
     } else if (required) {
-      this.socket.disconnect();
+      this.disconnect();
     }
   }
 
@@ -174,48 +179,18 @@ public class XMPPClient {
   }
 
   void notifyNonXMLReceibed(Exception e) {
-    // Could happens when connected to a SSL host expecting a TLS
-    // Try to start TLS before XML stream
-    if (!this.socket.securized && !this.authenticated && !this.binded) {
-      Log.write("Bad XML receibed. SSL host?",3);
-      if (this.socket.getSecurity() == XMPPSocket.Security.tls) {
-        this.disconnect();
-        if (!this.connect(XMPPSocket.Security.ssl)) {
-          this.disconnect();
-        }
-      }
-    } else {
+    Log.write("Bad XML receibed.",3);
+    Log.write(e.getMessage(),7);
+    if (this.authenticated || this.binded) {
       // TODO: Reconnect stuff
       this.disconnect();
-    }
-  }
-
-  void notifySSLExceptionDuringHandshake(Exception e) {
-    // Could happens when connected to a TLS host expecting a SSL
-    // Try to use TLS instead
-    // FIXME: does not works!
-    if (!this.socket.securized && !this.authenticated && !this.binded) {
-      Log.write("Socket SSL Exception during handshake",3);
-      Log.write(e.getMessage(),7);
-      if (this.socket.getSecurity() == XMPPSocket.Security.ssl) {
-        this.disconnect();
-        if (!this.connect(XMPPSocket.Security.tls)) {
-          this.disconnect();
-        }
-      }
     } else {
-      // TODO: Reconnect stuff
+      // Unrecoberable
       this.disconnect();
     }
   }
 
   // Private methods
-  private void initStream() {
-    this.stream = new XMPPStream(this);
-    this.stream.write(
-      "<stream:stream to=\"" + this.service +
-      "\" xmlns:stream=\"http://etherx.jabber.org/streams\" xmlns=\"jabber:client\" version=\"1.0\">"
-    );
-  }
+
 
 }

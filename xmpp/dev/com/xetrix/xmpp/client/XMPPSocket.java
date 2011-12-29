@@ -11,11 +11,14 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.net.ConnectException;
 import java.net.SocketException;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLException;
 
 public class XMPPSocket {
+  private static final Integer SSL_HANDSHAKE_MAX_TIME = 5000; // Milliseconds
   private XMPPClient client;
 
   private String          host;
@@ -27,7 +30,6 @@ public class XMPPSocket {
   protected Reader        reader;
   protected Writer        writer;
 
-  Boolean                 connecting = false;
   Boolean                 securized = false;
   Boolean                 compressed = false;
 
@@ -62,32 +64,28 @@ public class XMPPSocket {
   }
 
   public Boolean connect(String h, Integer p) {
-    Boolean t = false;
-    this.connecting = true;
     this.securized = false;
+    this.compressed = false;
     this.host = h;
     this.port = p;
-    switch (this.security) {
-      case ssl:
-        t = this.openSSL();
-      default:
-        t = this.openPlain();
+
+    if (this.security == Security.ssl) {
+      return this.openPlain() && this.enableTLS();
+    } else {
+      return this.openPlain();
     }
-    this.connecting = false;
-    return t;
   }
 
   public Boolean disconnect() {
     this.securized = false;
     this.compressed = false;
-    this.connecting = false;
     try {
       if (this.socket.isConnected()) {
         this.socket.close();
       }
     } catch (IOException ioe) {
     }
-    return !this.socket.isConnected();
+    return true;
   }
 
   public Boolean isConnected() {
@@ -95,15 +93,47 @@ public class XMPPSocket {
   }
 
   public Boolean enableTLS() {
-    if (!this.securized && this.socket.isConnected()) {
-      return switchToTLS();
+    if (this.securized || !this.socket.isConnected()) {
+      return false;
+    }
+    try {
+      // TODO: Verify server certs.
+      SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+      Socket plain = this.socket;
+      this.socket = socketFactory.createSocket(plain, plain.getInetAddress().getHostName(),
+                                               plain.getPort(), true);
+      ((SSLSocket) this.socket).addHandshakeCompletedListener(new HSListener());
+      this.socket.setSoTimeout(0);
+      this.socket.setKeepAlive(true);
+      ((SSLSocket) this.socket).startHandshake();
+
+      Integer whaitHS = 0;
+      try {
+        while (whaitHS < SSL_HANDSHAKE_MAX_TIME) {
+          if (this.securized == true) {
+            return this.initIO();
+          } else {
+            whaitHS += 125;
+            Thread.currentThread().sleep(125);
+          }
+        }
+        return false;
+      } catch (InterruptedException e) {
+        return false;
+      }
+    } catch (SSLException ssle) {
+      ssle.printStackTrace(); // DEBUG
+    } catch (SocketException se) {
+      se.printStackTrace(); // DEBUG
+    } catch (IOException ioe) {
+      ioe.printStackTrace(); // DEBUG
     }
     return false;
   }
 
   public Boolean enableCompression() {
     if (!compressed && this.socket.isConnected()) {
-      this.compressed = switchToCompressed(this.compression);
+      this.compressed = false; // TODO
     }
     return this.compressed;
   }
@@ -136,22 +166,17 @@ public class XMPPSocket {
   }
 
   // Private methods
-  private Boolean openSSL() {
-    if (this.openPlain() && this.enableTLS()) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   private Boolean openPlain() {
     try {
       this.socket = new Socket(this.host, this.port);
       while (true) {
         try {
           if (this.socket.isConnected()) {
-            this.initIO();
-            return true;
+            if (this.security != Security.ssl) {
+              return this.initIO();
+            } else {
+              return true;
+            }
           } else {
             Thread.currentThread().sleep(125);
           }
@@ -168,39 +193,6 @@ public class XMPPSocket {
     return false;
   }
 
-  private Boolean switchToTLS() {
-    try {
-      // TODO: Verify server certs.
-      SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-      Socket plain = this.socket;
-      this.socket = socketFactory.createSocket(plain, plain.getInetAddress().getHostName(),
-                                               plain.getPort(), true);
-      this.socket.setSoTimeout(0);
-      this.socket.setKeepAlive(true);
-      this.initIO();
-      ((SSLSocket) socket).startHandshake();
-      this.securized = true;
-    } catch (SSLException ssle) {
-      // This could happen when trying to connect to a TLS server asuming SSL
-      // We can try to switch to TLS
-      this.securized = false;
-      if (this.connecting) {
-        this.client.notifySSLExceptionDuringHandshake(ssle);
-      }
-    } catch (SocketException se) {
-      this.securized = false;
-      se.printStackTrace(); // DEBUG
-    } catch (IOException ioe) {
-      this.securized = false;
-      ioe.printStackTrace(); // DEBUG
-    }
-    return this.securized;
-  }
-
-  private Boolean switchToCompressed(Compression c) {
-    return false;
-  }
-
   private Boolean initIO() {
     try {
       this.reader = new BufferedReader(new InputStreamReader(
@@ -210,7 +202,16 @@ public class XMPPSocket {
       return true;
     } catch (IOException ioe) {
       ioe.printStackTrace(); // DEBUG
+    } catch (Exception e) {
+      e.printStackTrace(); // DEBUG
     }
     return false;
+  }
+
+  // Listeners
+  class HSListener implements HandshakeCompletedListener {
+    public void handshakeCompleted(HandshakeCompletedEvent e) {
+      securized = true;
+    }
   }
 }

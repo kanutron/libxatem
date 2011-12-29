@@ -3,7 +3,9 @@
 #!/bin/sh
 PKG="com.xetrix.xmpp."
 CLS="XatemTester"
-CMD="java -Djavax.net.debug=socket -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5223 1"
+CMD="java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 0"
+#CMD="java -Djavax.net.debug=none -jar $CLS.jar kanutron@chat.facebook.com dev chat.facebook.com 5222 0"
+#CMD="java -Djavax.net.debug=ssl -jar $CLS.jar kanutron@jabber.org dev jabber.org 5222 2"
 SRC=com/xetrix/xmpp
 
 export CLASSPATH=./lib/jargs.jar:./lib/xpp.jar:$CLASSPATH
