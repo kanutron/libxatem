@@ -16,10 +16,9 @@ public class XMPPClient {
   private Integer                port;
 
   // Life cycle control
-  private Integer                packetId = 0;
-  private Boolean                connected = false;
-  private Boolean                authenticated = false;
-  private Boolean                binded = false;
+  private boolean                connected = false;
+  private boolean                authenticated = false;
+  private boolean                binded = false;
 
   // XMPP Client components
   protected XMPPSocket           socket = new XMPPSocket(this);
@@ -85,26 +84,26 @@ public class XMPPClient {
   public Integer getPort() {
     return this.port;
   }
-  public Boolean isConnected() {
+  public boolean isConnected() {
     return this.connected && this.socket.isConnected();
   }
-  public Boolean isAuthed() {
+  public boolean isAuthed() {
     return this.authenticated;
   }
-  public Boolean isBinded() {
+  public boolean isBinded() {
     return this.binded;
   }
-  public Boolean isSecurized() {
+  public boolean isSecurized() {
     return this.socket.securized;
   }
-  public Boolean isCompressed() {
+  public boolean isCompressed() {
     return this.socket.compressed;
   }
   public String getConnectionID() {
     return this.stream.getConnectionID();
   }
 
-  public Boolean connect(XMPPSocket.Security s) {
+  public boolean connect(XMPPSocket.Security s) {
     socket = new XMPPSocket(this);
     if (this.socket.setSecurity(s)) {
       if (this.socket.connect(this.host, this.port)) {
@@ -117,7 +116,7 @@ public class XMPPClient {
   }
 
   // TODO: Use of values()???
-  public Boolean connect(Integer s) {
+  public boolean connect(Integer s) {
     switch (s) {
       case 0: return this.connect(XMPPSocket.Security.none);
       case 1: return this.connect(XMPPSocket.Security.ssl);
@@ -126,36 +125,26 @@ public class XMPPClient {
     return false;
   }
 
-  public Boolean connect(String s) {
+  public boolean connect(String s) {
     return this.connect(XMPPSocket.Security.fromString(s));
   }
 
-  public Boolean connect() {
+  public boolean connect() {
     return this.connect(XMPPSocket.Security.none);
   }
 
-  public Boolean disconnect() {
+  public boolean disconnect() {
+    this.stream.finishStream();
+    this.socket.disconnect();
+
     this.connected = false;
     this.authenticated = false;
     this.binded = false;
+
     this.stream = new XMPPStream(this);
     this.socket = new XMPPSocket(this);
+
     return true;
-  }
-
-  public Boolean startTLS() {
-    if (this.socket.getSecurity() == XMPPSocket.Security.tls &&
-        this.isConnected() &&
-        this.socket.enableTLS()) {
-      this.stream.initStream();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public Integer getPacketId() {
-    return ++packetId;
   }
 
   // Package methods
@@ -163,31 +152,21 @@ public class XMPPClient {
     this.service = s;
   }
 
-  void requestStartTLS(Boolean required) {
-    if (this.socket.getSecurity() == XMPPSocket.Security.tls) {
-      this.stream.write("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
-    } else if (required) {
-      this.disconnect();
-    }
-  }
-
-  void notifySocketClosed(Exception e) {
-    Log.write("Socket closed unexpectedly",3);
+  // Exception handlers
+  void notifySocketException(Exception e) {
+    Log.write("Connection exception.",3);
     Log.write(e.getMessage(),7);
+    e.printStackTrace();
     // TODO: reconnection stuff
     this.disconnect();
   }
 
-  void notifyNonXMLReceibed(Exception e) {
-    Log.write("Bad XML receibed.",3);
+  void notifyStreamException(Exception e) {
+    Log.write("Parser exception.",3);
     Log.write(e.getMessage(),7);
-    if (this.authenticated || this.binded) {
-      // TODO: Reconnect stuff
-      this.disconnect();
-    } else {
-      // Unrecoberable
-      this.disconnect();
-    }
+    e.printStackTrace();
+    // TODO: reconnection stuff
+    this.disconnect();
   }
 
   // Private methods

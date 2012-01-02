@@ -6,16 +6,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.net.ConnectException;
-import java.net.SocketException;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLException;
 
 public class XMPPSocket {
   private static final Integer SSL_HANDSHAKE_MAX_TIME = 5000; // Milliseconds
@@ -30,8 +25,8 @@ public class XMPPSocket {
   protected Reader        reader;
   protected Writer        writer;
 
-  Boolean                 securized = false;
-  Boolean                 compressed = false;
+  boolean                 securized = false;
+  boolean                 compressed = false;
 
   // Constructors
   public XMPPSocket(XMPPClient c) {
@@ -39,7 +34,7 @@ public class XMPPSocket {
   }
 
   // Pulic methods
-  public Boolean setSecurity(Security s) {
+  public boolean setSecurity(Security s) {
     if (this.securized) {
       return false;
     }
@@ -51,7 +46,7 @@ public class XMPPSocket {
     return this.security;
   }
 
-  public Boolean setCompression(Compression c) {
+  public boolean setCompression(Compression c) {
     if (this.compressed) {
       return false;
     }
@@ -63,7 +58,7 @@ public class XMPPSocket {
     return this.compression;
   }
 
-  public Boolean connect(String h, Integer p) {
+  public boolean connect(String h, Integer p) {
     this.securized = false;
     this.compressed = false;
     this.host = h;
@@ -76,23 +71,24 @@ public class XMPPSocket {
     }
   }
 
-  public Boolean disconnect() {
+  public boolean disconnect() {
     this.securized = false;
     this.compressed = false;
     try {
       if (this.socket.isConnected()) {
         this.socket.close();
       }
-    } catch (IOException ioe) {
+    } catch (Exception e) {
+      this.client.notifySocketException(e);
     }
     return true;
   }
 
-  public Boolean isConnected() {
+  public boolean isConnected() {
     return this.socket.isConnected();
   }
 
-  public Boolean enableTLS() {
+  public boolean enableTLS() {
     if (this.securized || !this.socket.isConnected()) {
       return false;
     }
@@ -121,17 +117,13 @@ public class XMPPSocket {
       } catch (InterruptedException e) {
         return false;
       }
-    } catch (SSLException ssle) {
-      ssle.printStackTrace(); // DEBUG
-    } catch (SocketException se) {
-      se.printStackTrace(); // DEBUG
-    } catch (IOException ioe) {
-      ioe.printStackTrace(); // DEBUG
+    } catch (Exception e) {
+      this.client.notifySocketException(e);
     }
     return false;
   }
 
-  public Boolean enableCompression() {
+  public boolean enableCompression() {
     if (!compressed && this.socket.isConnected()) {
       this.compressed = false; // TODO
     }
@@ -166,7 +158,7 @@ public class XMPPSocket {
   }
 
   // Private methods
-  private Boolean openPlain() {
+  private boolean openPlain() {
     try {
       this.socket = new Socket(this.host, this.port);
       while (true) {
@@ -183,27 +175,21 @@ public class XMPPSocket {
         } catch (InterruptedException e) {
         }
       }
-    } catch (UnknownHostException uhe) {
-      uhe.printStackTrace(); // DEBUG
-    } catch (ConnectException ce) {
-      ce.printStackTrace(); // DEBUG
-    } catch (IOException ioe) {
-      ioe.printStackTrace(); // DEBUG
+    } catch (Exception e) {
+      this.client.notifySocketException(e);
     }
     return false;
   }
 
-  private Boolean initIO() {
+  private boolean initIO() {
     try {
       this.reader = new BufferedReader(new InputStreamReader(
         this.socket.getInputStream(), "UTF-8"));
       this.writer = new BufferedWriter(new OutputStreamWriter(
         this.socket.getOutputStream(), "UTF-8"));
       return true;
-    } catch (IOException ioe) {
-      ioe.printStackTrace(); // DEBUG
     } catch (Exception e) {
-      e.printStackTrace(); // DEBUG
+      this.client.notifySocketException(e);
     }
     return false;
   }
