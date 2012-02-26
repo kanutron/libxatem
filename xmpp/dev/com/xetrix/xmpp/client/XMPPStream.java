@@ -22,7 +22,7 @@ public class XMPPStream {
   // Stream Threads
   private Thread readThread;
   private Thread writeThread;
-  //private final BlockingQueue<String> outQueue; // TODO: Class packet instead of raw string
+  private final BlockingQueue<String> stanzaOutQueue = new ArrayBlockingQueue<String>(500);
 
   // Constructors
   public XMPPStream(XMPPClient c) {
@@ -30,12 +30,11 @@ public class XMPPStream {
   }
 
   // Package methods
-  void write(String s) { // DEBUG METHOD
+  void pushStanza(String s) {
     try {
-      Log.write("<<< " + s, 7); // DEBUG
-      this.client.socket.writer.write(s);
-      this.client.socket.writer.flush();
-    } catch (Exception e) {
+      stanzaOutQueue.put(s);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       this.client.notifyStreamException(e);
     }
   }
@@ -56,7 +55,7 @@ public class XMPPStream {
       this.initParser();
       this.initWriter();
 
-      this.write(
+      this.pushStanza(
         "<stream:stream to=\"" + this.client.getService() +
         "\" xmlns:stream=\"http://etherx.jabber.org/streams\" " +
            "xmlns=\"jabber:client\" version=\"1.0\">");
@@ -65,7 +64,7 @@ public class XMPPStream {
 
   void finishStream() {
     if (this.client.socket.isConnected()) {
-      this.write("</stream:stream>");
+      this.pushStanza("</stream:stream>");
     }
     this.parserDone = true;
     this.readThread = new Thread();
@@ -93,14 +92,28 @@ public class XMPPStream {
   }
 
   private void initWriter() {
-    //this.outQueue = new ArrayBlockingQueue<String>(500, true);
-    writeThread = new Thread() {
+    this.writeThread = new Thread() {
       public void run() {
-        //writePackets(this);
+        procOutQueue(this);
       }
     };
-    writeThread.setName("ThreadQueueOut");
-    writeThread.setDaemon(true);
+    this.writeThread.setName("ThreadStanzaOutQueue");
+    this.writeThread.setDaemon(true);
+    this.writeThread.start();
+  }
+
+  private void procOutQueue(Thread thread) {
+    Log.write("Proc out queue start", 7); // DEBUG
+    try {
+      String stanza;
+      while ((stanza = stanzaOutQueue.take()) != "") {
+        Log.write("<<< " + stanza , 7); // DEBUG
+        this.client.socket.writer.write(stanza );
+        this.client.socket.writer.flush();
+      }
+    } catch (Exception e) {
+      this.client.notifyStreamException(e);
+    }
   }
 
   private void parsePackets(Thread thread) {
@@ -130,9 +143,6 @@ public class XMPPStream {
             // TODO
           } else if (parser.getName().equals("features")) {
             this.parseFeatures(parser);
-          } else if (parser.getName().equals("proceed")) {
-            this.startTLS();
-            return;
           } else if (parser.getName().equals("failure")) {
             String namespace = parser.getNamespace(null);
             if ("urn:ietf:params:xml:ns:xmpp-tls".equals(namespace)) {
@@ -152,6 +162,9 @@ public class XMPPStream {
         } else if (eventType == XmlPullParser.END_TAG) {
           if (parser.getName().equals("stream")) {
             this.client.disconnect();
+          } else if (parser.getName().equals("proceed")) {
+            this.startTLS();
+            return;
           }
         }
         eventType = parser.next();
@@ -198,10 +211,10 @@ public class XMPPStream {
 
   private void requestStartTLS(boolean required) throws Exception {
     if (this.client.socket.getSecurity() == XMPPSocket.Security.tls) {
-      this.write("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
+      this.pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
     } else if (required) {
       this.client.notifyStreamException(
-        new Exception("TLS required by server but not allowed by client."));
+        new Exception("TLS required by server but not allowed by this actual client settings."));
     }
   }
 

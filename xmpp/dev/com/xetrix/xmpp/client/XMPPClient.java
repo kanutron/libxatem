@@ -23,6 +23,7 @@ public class XMPPClient {
   // XMPP Client components
   protected XMPPSocket           socket = new XMPPSocket(this);
   protected XMPPStream           stream = new XMPPStream(this);
+  protected XMPPAuth             auth = new XMPPAuth(this);
 
   // Constructors
   public XMPPClient(String u, String p, String r, Integer pr, String host, Integer port, String serv) {
@@ -104,7 +105,7 @@ public class XMPPClient {
   }
 
   public boolean connect(XMPPSocket.Security s) {
-    socket = new XMPPSocket(this);
+    this.socket = new XMPPSocket(this);
     if (this.socket.setSecurity(s)) {
       if (this.socket.connect(this.host, this.port)) {
         this.connected = true;
