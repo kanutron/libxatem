@@ -173,6 +173,10 @@ public class XMPPClient {
     this.auth.setServerMechanisms(mechs);
   }
 
+  void notifyCompressionMethods(List<String> methods) {
+    this.socket.compressionSetServerMethods(methods);
+  }
+
   void notifyAuthenticated() {
     this.authenticated=true;
   }
@@ -217,7 +221,7 @@ public class XMPPClient {
   }
 
   void notifySocketException(Exception e) {
-    Log.write("Connection exception.",7);
+    Log.write("Socket exception.",7);
     Log.write(e.getMessage(),3);
     e.printStackTrace();
     // TODO: reconnection stuff

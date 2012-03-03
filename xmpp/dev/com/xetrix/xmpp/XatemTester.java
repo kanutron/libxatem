@@ -37,7 +37,7 @@ public class XatemTester {
         Log.write("XATEM Tester still running", 7);
         Log.write("  Client connected: " + xc.isConnected(), 7);
         Log.write("  Socket securized: " + xc.isSecurized(), 7);
-        //Log.write("  Socket compression: " + xc.isCompressed(), 7);
+        Log.write("  Socket compression: " + xc.isCompressed(), 7);
         Log.write("  Connection ID: " + xc.getConnectionID(), 7);
         Log.write("  Service: " + xc.getService(), 7);
         Log.write("  Client authed: " + xc.isAuthed(), 7);

@@ -95,6 +95,22 @@ public class XMPPStream {
     }
   }
 
+  void requestCompression() throws Exception {
+    if (this.client.socket.getCompression() != XMPPSocket.Compression.none) {
+      this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
+                      "<method>" + this.client.socket.getCompression().toString() +
+                      "</method></compress>");
+    }
+  }
+
+  void enableCompression() {
+    if (this.client.socket.enableCompression()) {
+      this.initStream();
+    } else {
+      this.client.notifyStreamException(new Exception("Start compression failed."));
+    }
+  }
+
   void doBind() {
     this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
       this.getNextPacketId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
@@ -199,7 +215,8 @@ public class XMPPStream {
               return;
             }
           } else if (parser.getName().equals("compressed")) {
-            // TODO
+            this.enableCompression();
+            return;
           }
         } else if (eventType == XmlPullParser.END_TAG) {
           if (parser.getName().equals("stream")) {

@@ -4,11 +4,11 @@
 PKG="com.xetrix.xmpp."
 CLS="XatemTester"
 CMD="java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 2"
-CMD="java -Djavax.net.debug=none -jar $CLS.jar kanutron dev chat.facebook.com 5222 0"
+CMD="java -Djavax.net.debug=none -jar $CLS.jar kanutron dev chat.facebook.com 5222 2"
 CMD="java -Djavax.net.debug=none -jar $CLS.jar kanutron@jabber.org dev jabber.org 5222 0"
 SRC=com/xetrix/xmpp
 
-export CLASSPATH=./lib/jargs.jar:./lib/xpp.jar:$CLASSPATH
+export CLASSPATH=./lib/jargs.jar:./lib/xpp.jar:./lib/jzlib.jar:$CLASSPATH
 
 echo "cleaning..."
 rm -f $CLS.jar

@@ -12,6 +12,7 @@ import com.xetrix.xmpp.util.Log; // DUBG
 public class XMPPStreamParsers {
 
   static void parseFeatures(XmlPullParser parser, XMPPStream stream) throws Exception {
+    boolean compressionReceived = false;
     boolean startTLSReceived = false;
     boolean startTLSRequired = false;
     boolean parserDone = false;
@@ -30,7 +31,8 @@ public class XMPPStreamParsers {
         } else if (parser.getName().equals("session")) {
           // TODO
         } else if (parser.getName().equals("compression")) {
-          // TODO
+          compressionReceived = true;
+          stream.client.notifyCompressionMethods(parseMethods(parser));
         } else if (parser.getName().equals("register")) {
           // TODO
         }
@@ -41,6 +43,9 @@ public class XMPPStreamParsers {
           startTLSRequired = true;
         } else if (parser.getName().equals("features")) {
           parserDone = true;
+          if (compressionReceived) {
+            stream.requestCompression();
+          }
           stream.client.notifyReadyToLogin();
         }
       }
@@ -64,6 +69,25 @@ public class XMPPStreamParsers {
       }
     }
     return mechanisms;
+  }
+
+  static List<String> parseMethods(XmlPullParser parser) throws Exception {
+    List<String> methods = new ArrayList<String>();
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        String elementName = parser.getName();
+        if (elementName.equals("method")) {
+          methods.add(parser.nextText());
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("compression")) {
+          done = true;
+        }
+      }
+    }
+    return methods;
   }
 
   // DEBUG METHOD

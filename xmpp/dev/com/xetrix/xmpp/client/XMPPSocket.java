@@ -1,12 +1,18 @@
 package com.xetrix.xmpp.client;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.io.Reader;
 import java.io.Writer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
@@ -124,10 +130,27 @@ public class XMPPSocket {
   }
 
   public boolean enableCompression() {
-    if (!compressed && this.socket.isConnected()) {
-      this.compressed = false; // TODO
+    if (!this.compressed && this.socket.isConnected()) {
+      if (this.client.isAuthed()) {
+        this.client.notifySocketException(
+          new Exception("Compression should be negotiated before authentication."));
+      }
+      return this.initIO();
     }
     return this.compressed;
+  }
+
+  public void compressionSetServerMethods(List<String> methods) {
+    if (methods.contains(Compression.zlib.toString())) {
+      try {
+        Class.forName("com.jcraft.jzlib.ZOutputStream");
+        this.compression = Compression.zlib;
+        return;
+      } catch (ClassNotFoundException e) {
+        this.compression = Compression.none;
+      }
+    }
+    this.compression = Compression.none;
   }
 
   public enum Security {
@@ -182,14 +205,35 @@ public class XMPPSocket {
   }
 
   private boolean initIO() {
-    try {
-      this.reader = new BufferedReader(new InputStreamReader(
-        this.socket.getInputStream(), "UTF-8"));
-      this.writer = new BufferedWriter(new OutputStreamWriter(
-        this.socket.getOutputStream(), "UTF-8"));
-      return true;
-    } catch (Exception e) {
-      this.client.notifySocketException(e);
+    if (this.compression == Compression.none) {
+      try {
+        this.reader = new BufferedReader(new InputStreamReader(
+          this.socket.getInputStream(), "UTF-8"));
+        this.writer = new BufferedWriter(new OutputStreamWriter(
+          this.socket.getOutputStream(), "UTF-8"));
+        return true;
+      } catch (Exception e) {
+        this.client.notifySocketException(e);
+      }
+    } else if (this.compression == Compression.zlib) {
+      try {
+        Class<?> ziClass = Class.forName("com.jcraft.jzlib.ZInputStream");
+        Constructor<?> constructor = ziClass.getConstructor(InputStream.class);
+        Object in = constructor.newInstance(socket.getInputStream());
+        Method method = ziClass.getMethod("setFlushMode", Integer.TYPE);
+        method.invoke(in, 2);
+        reader = new BufferedReader(new InputStreamReader((InputStream) in, "UTF-8"));
+
+        Class<?> zoClass = Class.forName("com.jcraft.jzlib.ZOutputStream");
+        constructor = zoClass.getConstructor(OutputStream.class, Integer.TYPE);
+        Object out = constructor.newInstance(socket.getOutputStream(), 9);
+        method = zoClass.getMethod("setFlushMode", Integer.TYPE);
+        method.invoke(out, 2);
+        writer = new BufferedWriter(new OutputStreamWriter((OutputStream) out, "UTF-8"));
+        return true;
+      } catch (Exception e) {
+        this.client.notifySocketException(e);
+      }
     }
     return false;
   }
