@@ -144,10 +144,6 @@ public class XMPPAuth {
     }
     mapChallenge.put("cnonce", new String(Base64.encode(tmpRand)));
 
-    ///////////// DEBUGGGGG
-    //mapChallenge.put("nonce", new String("CF6D898AED6C01E9326D2C7A494FA375"));
-    //mapChallenge.put("cnonce", new String("0JVyOLRzEFTzwaWL7Q0GSFp1+PkRRWjAnEwP1WrW9O8="));
-
     // Prepare response
     mapResponse.put("username",this.username);
     mapResponse.put("response",this.processDIGESTMD5cryptpassword(mapChallenge));
@@ -175,16 +171,6 @@ public class XMPPAuth {
         tmp.append(",");
       }
     }
-
-    //tmp.append("username=\"" + mapResponse.get("username") + "\",");
-    //tmp.append("response=\"" + mapResponse.get("response") + "\",");
-    //tmp.append("charset=\"" + mapResponse.get("charset") + "\",");
-    //tmp.append("nc=\"" + mapResponse.get("nc") + "\",");
-    //tmp.append("qop=\"" + mapResponse.get("qop") + "\",");
-    //tmp.append("nonce=\"" + mapResponse.get("nonce") + "\",");
-    //tmp.append("digest-uri=\"" + mapResponse.get("digest-uri") + "\",");
-    //tmp.append("realm=\"" + mapResponse.get("realm") + "\",");
-    //tmp.append("cnonce=\"" + mapResponse.get("cnonce") + "\",");
 
     response.append("<response xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">");
     response.append(Base64.encodeString(tmp.toString()));
