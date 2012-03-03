@@ -110,7 +110,6 @@ public class XMPPAuth {
     Map<String,String> mapChallenge = new HashMap<String, String>();
     Map<String,String> mapResponse = new HashMap<String, String>();
 
-    System.out.println(data); // DEBUG
     String[] items = data.split(",");
 
     // Decode challenge
@@ -128,8 +127,6 @@ public class XMPPAuth {
         mapChallenge.put(currentKey,mapChallenge.get(currentKey) + "," + items[i]);
       }
     }
-
-    System.out.println("nonce=" + mapChallenge.get("nonce")); // DEBUG
 
     // Fix challenge
     if (!mapChallenge.containsKey("digest-uri")) {
