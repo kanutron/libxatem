@@ -19,7 +19,7 @@ public class XMPPSocket {
   private String          host;
   private Integer         port;
   private Security        security = Security.none;
-  private Compression     compression = Compression.zlib;
+  private Compression     compression = Compression.none;
 
   private Socket          socket;
   protected Reader        reader;
@@ -157,6 +157,20 @@ public class XMPPSocket {
     }
   }
 
+  // Package methods
+  boolean initIO() { // Package=??
+    try {
+      this.reader = new BufferedReader(new InputStreamReader(
+        this.socket.getInputStream(), "UTF-8"));
+      this.writer = new BufferedWriter(new OutputStreamWriter(
+        this.socket.getOutputStream(), "UTF-8"));
+      return true;
+    } catch (Exception e) {
+      this.client.notifySocketException(e);
+    }
+    return false;
+  }
+
   // Private methods
   private boolean openPlain() {
     try {
@@ -175,19 +189,6 @@ public class XMPPSocket {
         } catch (InterruptedException e) {
         }
       }
-    } catch (Exception e) {
-      this.client.notifySocketException(e);
-    }
-    return false;
-  }
-
-  private boolean initIO() {
-    try {
-      this.reader = new BufferedReader(new InputStreamReader(
-        this.socket.getInputStream(), "UTF-8"));
-      this.writer = new BufferedWriter(new OutputStreamWriter(
-        this.socket.getOutputStream(), "UTF-8"));
-      return true;
     } catch (Exception e) {
       this.client.notifySocketException(e);
     }

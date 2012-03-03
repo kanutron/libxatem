@@ -1,6 +1,8 @@
 package com.xetrix.xmpp.client;
 
+import java.util.List;
 import java.io.IOException;
+
 import com.xetrix.xmpp.util.Log; // DUBG
 
 public class XMPPClient {
@@ -43,7 +45,11 @@ public class XMPPClient {
     this.priority = pr;
     this.host = host;
     this.port = port;
-    this.service = this.username.substring(this.username.indexOf("@")+1);
+    if (this.username.indexOf("@")>0) {
+      this.service = this.username.substring(this.username.indexOf("@")+1);
+    } else {
+      this.service = host;
+    }
   }
 
   public XMPPClient(String u, String p, String r, Integer pr) {
@@ -104,6 +110,16 @@ public class XMPPClient {
     return this.stream.getConnectionID();
   }
 
+  public List<String> getSASLServerMechanisms() {
+    return this.auth.getServerMechanisms();
+  }
+  public List<String> getSASLClientMechanisms() {
+    return this.auth.getClientMechanisms();
+  }
+  public List<String> getSASLAvailableMechanisms() {
+    return this.auth.getAvailableMechanisms();
+  }
+
   public boolean connect(XMPPSocket.Security s) {
     this.socket = new XMPPSocket(this);
     if (this.socket.setSecurity(s)) {
@@ -153,24 +169,70 @@ public class XMPPClient {
     this.service = s;
   }
 
+  void saslSetServerMechanisms(List<String> mechs) {
+    this.auth.setServerMechanisms(mechs);
+  }
+
+  void notifyAuthenticated() {
+    this.authenticated=true;
+  }
+
+  void notifyReadyToLogin() {
+    // Already authenticated
+    if (this.authenticated) {
+      return;
+    }
+
+    // Wait for secure socket
+    if (this.socket.getSecurity() != XMPPSocket.Security.none &&
+        !this.socket.securized) {
+      return;
+    }
+
+    // Wait for compression
+    if (this.socket.getCompression() != XMPPSocket.Compression.none &&
+        !this.socket.compressed) {
+      return;
+    }
+
+    String mech = this.auth.getBestMechanism();
+    if (mech != "") {
+      Log.write("Starting SASL with " + mech, 6);
+      this.auth.initAuthData(this.username, this.password, this.resource, this.service);
+      this.auth.startAuthWith(mech);
+    } else {
+      notifyStreamException(
+        new Exception("No suitable SASL mechanisms found. Can't login."));
+    }
+  }
+
   // Exception handlers
-  void notifySocketException(Exception e) {
-    Log.write("Connection exception.",3);
-    Log.write(e.getMessage(),7);
+  void notifyLoginFailed(Exception e) {
+    Log.write("Login exception.",7);
+    Log.write(e.getMessage(),3);
     e.printStackTrace();
     // TODO: reconnection stuff
-    this.disconnect();
+    if (this.connected)
+      this.disconnect();
+  }
+
+  void notifySocketException(Exception e) {
+    Log.write("Connection exception.",7);
+    Log.write(e.getMessage(),3);
+    e.printStackTrace();
+    // TODO: reconnection stuff
+    if (this.connected)
+      this.disconnect();
   }
 
   void notifyStreamException(Exception e) {
-    Log.write("Parser exception.",3);
-    Log.write(e.getMessage(),7);
+    Log.write("Stream exception.",7);
+    Log.write(e.getMessage(),3);
     e.printStackTrace();
     // TODO: reconnection stuff
-    this.disconnect();
+    if (this.connected)
+      this.disconnect();
   }
 
   // Private methods
-
-
 }

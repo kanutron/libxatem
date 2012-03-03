@@ -1,15 +1,15 @@
 package com.xetrix.xmpp.client;
 
-import org.xmlpull.mxp1.MXParser;
-import org.xmlpull.v1.XmlPullParser;
-
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import org.xmlpull.mxp1.MXParser;
+import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.util.Log; // DUBG
 
 public class XMPPStream {
-  private XMPPClient client;
+  XMPPClient client;
 
   // Life cycle
   private String connectionID = "";
@@ -63,11 +63,42 @@ public class XMPPStream {
   }
 
   void finishStream() {
-    if (this.client.socket.isConnected()) {
-      this.pushStanza("</stream:stream>");
-    }
     this.parserDone = true;
+    this.readThread.interrupt();
     this.readThread = new Thread();
+    this.writeThread.interrupt();
+    this.writeThread = new Thread();
+
+    if (this.client.socket.isConnected()) {
+      try {
+        this.client.socket.writer.write("</stream:stream>");
+        this.client.socket.writer.flush();
+      } catch (Exception e) {
+      }
+    }
+  }
+
+  void requestStartTLS(boolean required) throws Exception {
+    if (this.client.socket.getSecurity() == XMPPSocket.Security.tls) {
+      this.pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
+    } else if (required) {
+      this.client.notifyStreamException(
+        new Exception("TLS required by server but not allowed by this actual client settings."));
+    }
+  }
+
+  void startTLS() {
+    if (this.client.socket.enableTLS()) {
+      this.initStream();
+    } else {
+      this.client.notifyStreamException(new Exception("Start TLS failed."));
+    }
+  }
+
+  void doBind() {
+    this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
+      this.getNextPacketId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
+      "<resource>" + this.client.getResource() + "</resource></bind></iq>");
   }
 
   // Private methods
@@ -92,6 +123,7 @@ public class XMPPStream {
   }
 
   private void initWriter() {
+    stanzaOutQueue.clear();
     this.writeThread = new Thread() {
       public void run() {
         procOutQueue(this);
@@ -108,9 +140,11 @@ public class XMPPStream {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
         Log.write("<<< " + stanza , 7); // DEBUG
-        this.client.socket.writer.write(stanza );
+        this.client.socket.writer.write(stanza);
         this.client.socket.writer.flush();
       }
+    } catch (InterruptedException e) {
+      // do nothing.
     } catch (Exception e) {
       this.client.notifyStreamException(e);
     }
@@ -121,7 +155,7 @@ public class XMPPStream {
       int eventType = parser.getEventType();
       do {
         if (eventType == XmlPullParser.START_TAG) {
-          Log.write(">>> " + repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
+          Log.write(">>> " + XMPPStreamParsers.repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
 
           if (parser.getName().equals("message")) {
             // TODO:
@@ -142,20 +176,28 @@ public class XMPPStream {
           } else if (parser.getName().equals("error")) {
             // TODO
           } else if (parser.getName().equals("features")) {
-            this.parseFeatures(parser);
+            XMPPStreamParsers.parseFeatures(parser, this);
           } else if (parser.getName().equals("failure")) {
             String namespace = parser.getNamespace(null);
             if ("urn:ietf:params:xml:ns:xmpp-tls".equals(namespace)) {
-              // TODO
+              this.client.notifySocketException(new Exception("TLS failure received."));
             } else if ("http://jabber.org/protocol/compress".equals(namespace)) {
-              // TODO
+              this.client.notifySocketException(new Exception("Compression failure received."));
+            } else if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
+              this.client.notifyLoginFailed(new Exception("Login process failed."));
             } else {
-              // TODO
+              this.client.notifyStreamException(new Exception("Unknown failure received."));
             }
           } else if (parser.getName().equals("challenge")) {
-            // TODO
+            String challengeData = parser.nextText();
+            this.client.auth.processResponse(challengeData);
           } else if (parser.getName().equals("success")) {
-            // TODO
+            String namespace = parser.getNamespace(null);
+            if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
+              this.client.notifyAuthenticated();
+              this.initStream();
+              return;
+            }
           } else if (parser.getName().equals("compressed")) {
             // TODO
           }
@@ -172,67 +214,6 @@ public class XMPPStream {
     } catch (Exception e) {
       this.client.notifyStreamException(e);
     }
-  }
-
-  private void parseFeatures(XmlPullParser parser) throws Exception {
-    boolean startTLSReceived = false;
-    boolean startTLSRequired = false;
-    boolean parserDone = false;
-
-    while (!parserDone) {
-      int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        Log.write(">>> " + repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
-
-        if (parser.getName().equals("starttls")) {
-          startTLSReceived = true;
-        } else if (parser.getName().equals("mechanisms")) {
-          // TODO
-        } else if (parser.getName().equals("bind")) {
-          // TODO
-        } else if (parser.getName().equals("session")) {
-          // TODO
-        } else if (parser.getName().equals("compression")) {
-          // TODO
-        } else if (parser.getName().equals("register")) {
-          // TODO
-        }
-      } else if (eventType == XmlPullParser.END_TAG) {
-        if (parser.getName().equals("starttls")) {
-          this.requestStartTLS(startTLSRequired);
-        } else if (parser.getName().equals("required") && startTLSReceived) {
-          startTLSRequired = true;
-        } else if (parser.getName().equals("features")) {
-          parserDone = true;
-        }
-      }
-    }
-  }
-
-  private void requestStartTLS(boolean required) throws Exception {
-    if (this.client.socket.getSecurity() == XMPPSocket.Security.tls) {
-      this.pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
-    } else if (required) {
-      this.client.notifyStreamException(
-        new Exception("TLS required by server but not allowed by this actual client settings."));
-    }
-  }
-
-  private void startTLS() {
-    if (this.client.socket.enableTLS()) {
-      this.initStream();
-    } else {
-      this.client.notifyStreamException(new Exception("Start TLS failed."));
-    }
-  }
-
-  // DEBUG METHOD
-  private static String repeat(char c, int i) {
-    String tst = "";
-    for(int j = 0; j < i; j++) {
-      tst = tst+c;
-    }
-    return tst;
   }
 
 }
