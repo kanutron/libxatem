@@ -135,7 +135,7 @@ public class XMPPSocket {
         this.client.notifySocketException(
           new Exception("Compression should be negotiated before authentication."));
       }
-      return this.initIO();
+      this.compressed = this.initIO();
     }
     return this.compressed;
   }
