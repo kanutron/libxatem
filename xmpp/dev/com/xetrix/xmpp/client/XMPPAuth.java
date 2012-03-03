@@ -94,7 +94,7 @@ public class XMPPAuth {
     if (this.currentMech=="DIGEST-MD5") {
       switch (this.currentStep) {
         case 1:
-          this.processDIGESTMD5step1(Base64.decodeString(response));
+          this.processDIGESTMD5(Base64.decodeString(response));
           break;
         case 2:
           this.client.stream.pushStanza("<response xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
@@ -105,25 +105,31 @@ public class XMPPAuth {
 
   // Private stuff
 
-  private void processDIGESTMD5step1(String data) {
-    String[] items = data.split(",");
+  private void processDIGESTMD5(String data) {
     String currentKey = "";
     Map<String,String> mapChallenge = new HashMap<String, String>();
     Map<String,String> mapResponse = new HashMap<String, String>();
 
+    System.out.println(data); // DEBUG
+    String[] items = data.split(",");
+
     // Decode challenge
     for(int i=0; i < items.length ; i++) {
+      String[] kv = new String[2];
       if (items[i].indexOf("=")>0) {
-        String[] tmp = items[i].split("=");
-        currentKey = tmp[0];
-        if (tmp[1].substring(0,1).equals("\"")) {
-          tmp[1] = tmp[1].substring(1,tmp[1].length()-1);
+        kv[0] = items[i].substring(0, items[i].indexOf("="));
+        kv[1] = items[i].substring(items[i].indexOf("=")+1);
+        currentKey = kv[0];
+        if (kv[1].substring(0,1).equals("\"")) {
+          kv[1] = kv[1].substring(1,kv[1].length()-1);
         }
-        mapChallenge.put(tmp[0],tmp[1]);
+        mapChallenge.put(kv[0],kv[1]);
       } else if (currentKey!="") {
         mapChallenge.put(currentKey,mapChallenge.get(currentKey) + "," + items[i]);
       }
     }
+
+    System.out.println("nonce=" + mapChallenge.get("nonce")); // DEBUG
 
     // Fix challenge
     if (!mapChallenge.containsKey("digest-uri")) {
