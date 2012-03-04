@@ -33,26 +33,26 @@ public class XMPPAuth {
     this.clientMechs.add("ANONYMOUS");
   }
 
-  public void initAuthData(String u, String p, String r, String s) {
+  void initAuthData(String u, String p, String r, String s) {
     this.username = u;
     this.password = p;
     this.resource = r;
     this.service  = s;
   }
 
-  public void setServerMechanisms(List<String> mechs) {
+  void setServerMechanisms(List<String> mechs) {
     this.serverMechs = mechs;
   }
 
-  public List<String> getServerMechanisms() {
+  List<String> getServerMechanisms() {
     return this.serverMechs;
   }
 
-  public List<String> getClientMechanisms() {
+  List<String> getClientMechanisms() {
     return this.clientMechs;
   }
 
-  public List<String> getAvailableMechanisms() {
+  List<String> getAvailableMechanisms() {
     List<String> mechs = new ArrayList<String>();
     // We iterate trough client mechs because we assume they are sortered by strongest first
     Iterator itr = clientMechs.iterator();
@@ -65,7 +65,7 @@ public class XMPPAuth {
     return mechs;
   }
 
-  public String getBestMechanism() {
+  String getBestMechanism() {
     // We iterate trough client mechs because we assume they are sortered by strongest first
     Iterator itr = clientMechs.iterator();
     while(itr.hasNext()) {
@@ -77,7 +77,7 @@ public class XMPPAuth {
     return "";
   }
 
-  public void startAuthWith(String mech) {
+  void startAuthWith(String mech) {
     this.currentMech = mech;
     if (mech=="DIGEST-MD5") {
       this.client.stream.pushStanza("<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='DIGEST-MD5'/>");
@@ -90,7 +90,7 @@ public class XMPPAuth {
     }
   }
 
-  public void processResponse(String response) {
+  void processResponse(String response) {
     if (this.currentMech=="DIGEST-MD5") {
       switch (this.currentStep) {
         case 1:

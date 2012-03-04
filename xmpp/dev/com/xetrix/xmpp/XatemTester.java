@@ -41,9 +41,6 @@ public class XatemTester {
         Log.write("  Connection ID: " + xc.getConnectionID(), 7);
         Log.write("  Service: " + xc.getService(), 7);
         Log.write("  Client authed: " + xc.isAuthed(), 7);
-        Log.write("  Server Mechanisms: " + xc.getSASLServerMechanisms(), 7);
-        Log.write("  Client Mechanisms: " + xc.getSASLClientMechanisms(), 7);
-        Log.write("  Available Mechanisms: " + xc.getSASLAvailableMechanisms(), 7);
 
         Thread.currentThread().sleep(5000);
       } catch (InterruptedException e) {

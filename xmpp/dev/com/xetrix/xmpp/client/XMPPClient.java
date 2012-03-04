@@ -25,7 +25,7 @@ public class XMPPClient {
   // XMPP Client components
   protected XMPPSocket           socket = new XMPPSocket(this);
   protected XMPPStream           stream = new XMPPStream(this);
-  protected XMPPAuth             auth = new XMPPAuth(this);
+  protected XMPPAuth             auth;
 
   // Constructors
   public XMPPClient(String u, String p, String r, Integer pr, String host, Integer port, String serv) {
@@ -110,16 +110,6 @@ public class XMPPClient {
     return this.stream.getConnectionID();
   }
 
-  public List<String> getSASLServerMechanisms() {
-    return this.auth.getServerMechanisms();
-  }
-  public List<String> getSASLClientMechanisms() {
-    return this.auth.getClientMechanisms();
-  }
-  public List<String> getSASLAvailableMechanisms() {
-    return this.auth.getAvailableMechanisms();
-  }
-
   public boolean connect(XMPPSocket.Security s) {
     this.socket = new XMPPSocket(this);
     if (this.socket.setSecurity(s)) {
@@ -169,6 +159,7 @@ public class XMPPClient {
   }
 
   void saslSetServerMechanisms(List<String> mechs) {
+    this.auth = new XMPPAuth(this);
     this.auth.setServerMechanisms(mechs);
   }
 
@@ -178,12 +169,13 @@ public class XMPPClient {
 
   void notifyAuthenticated() {
     this.authenticated=true;
+    this.auth = null; // Clear memory
   }
 
   void notifyReadyToLogin() {
     // Already authenticated
     if (this.authenticated) {
-      Log.write("Already authenticated.", 6);
+      Log.write("Already authenticated.", 5);
       return;
     }
 
@@ -210,7 +202,6 @@ public class XMPPClient {
     Log.write("Login exception.",7);
     Log.write(e.getMessage(),3);
     e.printStackTrace();
-    // TODO: reconnection stuff
     if (this.connected)
       this.disconnect();
   }

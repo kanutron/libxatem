@@ -78,13 +78,37 @@ public class XMPPStream {
     }
   }
 
-  void requestStartTLS(boolean required) throws Exception {
+  boolean requestStartTLS(boolean required) throws Exception {
     if (this.client.socket.getSecurity() == XMPPSocket.Security.tls) {
       this.pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
+      return true;
     } else if (required) {
       this.client.notifyStreamException(
         new Exception("TLS required by server but not allowed by this actual client settings."));
+      return true; // Connection will be terminated. Notify the parser.
     }
+    return false;
+  }
+
+  boolean requestCompression() {
+    if (this.client.socket.getSecurity() != XMPPSocket.Security.none &&
+        this.client.socket.securized == false) {
+      // We should wait for TLS before compression.
+      // Once negotiated TLS, server could not offer compression.
+      this.client.socket.setCompression(XMPPSocket.Compression.none);
+      return false;
+    }
+    if (!this.client.isAuthed()) {
+      // We should wait for SASL authentication before compression.
+      return false;
+    }
+    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
+        !this.client.socket.compressed) {
+      this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
+                      "<method>" + this.client.socket.getCompression().toString() +
+                      "</method></compress>");
+    }
+    return true;
   }
 
   void startTLS() {
@@ -92,26 +116,6 @@ public class XMPPStream {
       this.initStream();
     } else {
       this.client.notifyStreamException(new Exception("Start TLS failed."));
-    }
-  }
-
-  void requestCompression() {
-    if (this.client.socket.getSecurity() != XMPPSocket.Security.none &&
-        this.client.socket.securized == false) {
-      // We should wait for TLS before compression.
-      // Once negotiated TLS, server could not offer compression.
-      this.client.socket.setCompression(XMPPSocket.Compression.none);
-      return;
-    }
-    if (!this.client.isAuthed()) {
-      // We should wait for SASL authentication before compression.
-      return;
-    }
-    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
-        !this.client.socket.compressed) {
-      this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
-                      "<method>" + this.client.socket.getCompression().toString() +
-                      "</method></compress>");
     }
   }
 
@@ -168,7 +172,6 @@ public class XMPPStream {
   }
 
   private void procOutQueue(Thread thread) {
-    Log.write("Proc out queue start", 7); // DEBUG
     try {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
@@ -177,18 +180,19 @@ public class XMPPStream {
         this.client.socket.writer.flush();
       }
     } catch (InterruptedException e) {
-      // do nothing.
     } catch (Exception e) {
       this.client.notifyStreamException(e);
     }
   }
+
+  // Parsers
 
   private void parsePackets(Thread thread) {
     try {
       int eventType = parser.getEventType();
       do {
         if (eventType == XmlPullParser.START_TAG) {
-          Log.write(">>> " + XMPPStreamParsers.repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
+          Log.write(">>> " + repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
 
           if (parser.getName().equals("message")) {
             // TODO:
@@ -206,23 +210,28 @@ public class XMPPStream {
                 }
               }
             }
-          } else if (parser.getName().equals("error")) {
-            parser.next();
-            String error = parser.getName(); // TODO: error-type to description
-            this.client.notifyStreamException(new Exception(error));
-            return;
           } else if (parser.getName().equals("features")) {
             XMPPStreamParsers.parseFeatures(parser, this);
+          } else if (parser.getName().equals("error")) {
+            // TODO: parseError, throw the Exception and return/finish
+            parser.next();
+            String error = parser.getName();
+            this.client.notifyStreamException(new Exception(error));
+            return;
           } else if (parser.getName().equals("failure")) {
             String namespace = parser.getNamespace(null);
             if ("urn:ietf:params:xml:ns:xmpp-tls".equals(namespace)) {
               this.client.notifySocketException(new Exception("TLS failure received."));
+              return;
             } else if ("http://jabber.org/protocol/compress".equals(namespace)) {
               this.client.notifySocketException(new Exception("Compression failure received."));
+              return;
             } else if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
               this.client.notifyLoginFailed(new Exception("Login process failed."));
+              return;
             } else {
               this.client.notifyStreamException(new Exception("Unknown failure received."));
+              return;
             }
           } else if (parser.getName().equals("challenge")) {
             String challengeData = parser.nextText();
@@ -239,10 +248,11 @@ public class XMPPStream {
             return;
           }
         } else if (eventType == XmlPullParser.END_TAG) {
-          if (parser.getName().equals("stream")) {
-            this.client.disconnect();
-          } else if (parser.getName().equals("proceed")) {
+          if (parser.getName().equals("proceed")) {
             this.startTLS();
+            return;
+          } else if (parser.getName().equals("stream")) {
+            this.client.disconnect();
             return;
           }
         }
@@ -253,4 +263,12 @@ public class XMPPStream {
     }
   }
 
+  // DEBUG METHOD
+  public static String repeat(char c, int i) {
+    String tst = "";
+    for(int j = 0; j < i; j++) {
+      tst = tst+c;
+    }
+    return tst;
+  }
 }
