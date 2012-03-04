@@ -183,18 +183,14 @@ public class XMPPClient {
   void notifyReadyToLogin() {
     // Already authenticated
     if (this.authenticated) {
+      Log.write("Already authenticated.", 6);
       return;
     }
 
     // Wait for secure socket
     if (this.socket.getSecurity() != XMPPSocket.Security.none &&
         !this.socket.securized) {
-      return;
-    }
-
-    // Wait for compression
-    if (this.socket.getCompression() != XMPPSocket.Compression.none &&
-        !this.socket.compressed) {
+      Log.write("Wait for secure socket before authentication.", 6);
       return;
     }
 

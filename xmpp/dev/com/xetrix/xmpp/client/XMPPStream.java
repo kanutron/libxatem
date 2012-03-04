@@ -95,15 +95,20 @@ public class XMPPStream {
     }
   }
 
-  void requestCompression() throws Exception {
+  void requestCompression() {
     if (this.client.socket.getSecurity() != XMPPSocket.Security.none &&
         this.client.socket.securized == false) {
-          // We should wait for TLS before compression.
-          // Once negotiated TLS, server could not offer compression.
+      // We should wait for TLS before compression.
+      // Once negotiated TLS, server could not offer compression.
       this.client.socket.setCompression(XMPPSocket.Compression.none);
       return;
     }
-    if (this.client.socket.getCompression() != XMPPSocket.Compression.none) {
+    if (!this.client.isAuthed()) {
+      // We should wait for SASL authentication before compression.
+      return;
+    }
+    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
+        !this.client.socket.compressed) {
       this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
                       "<method>" + this.client.socket.getCompression().toString() +
                       "</method></compress>");
@@ -119,6 +124,11 @@ public class XMPPStream {
   }
 
   void doBind() {
+    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
+        !this.client.socket.compressed) {
+      // We should wait for compression before resource binding.
+      return;
+    }
     this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
       this.getNextPacketId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
       "<resource>" + this.client.getResource() + "</resource></bind></iq>");
