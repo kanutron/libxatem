@@ -194,11 +194,11 @@ public class XMPPStream {
         if (eventType == XmlPullParser.START_TAG) {
           Log.write(">>> " + repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
 
-          if (parser.getName().equals("message")) {
+          if (parser.getName().equals("presence")) {
             // TODO:
           } else if (parser.getName().equals("iq")) {
             // TODO
-          } else if (parser.getName().equals("presence")) {
+          } else if (parser.getName().equals("message")) {
             // TODO
           } else if (parser.getName().equals("stream")) {
             if ("jabber:client".equals(parser.getNamespace(null))) {
