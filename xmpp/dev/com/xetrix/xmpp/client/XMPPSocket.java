@@ -130,11 +130,8 @@ public class XMPPSocket {
   }
 
   public boolean enableCompression() {
-    if (!this.compressed && this.socket.isConnected()) {
-      if (this.client.isAuthed()) {
-        this.client.notifySocketException(
-          new Exception("Compression should be negotiated before authentication."));
-      }
+    if (!this.compressed && this.compression != Compression.none &&
+        this.socket.isConnected()) {
       this.compressed = this.initIO();
     }
     return this.compressed;
