@@ -1,10 +1,7 @@
 package com.xetrix.xmpp.client;
 
-//import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.xmlpull.mxp1.MXParser;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.util.Log; // DUBG

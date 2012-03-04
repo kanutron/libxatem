@@ -132,7 +132,6 @@ public class XMPPClient {
     return false;
   }
 
-  // TODO: Use of values()???
   public boolean connect(Integer s) {
     switch (s) {
       case 0: return this.connect(XMPPSocket.Security.none);

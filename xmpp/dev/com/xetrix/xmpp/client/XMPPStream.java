@@ -98,6 +98,9 @@ public class XMPPStream {
   void requestCompression() throws Exception {
     if (this.client.socket.getSecurity() != XMPPSocket.Security.none &&
         this.client.socket.securized == false) {
+          // We should wait for TLS before compression.
+          // Once negotiated TLS, server could not offer compression.
+      this.client.socket.setCompression(XMPPSocket.Compression.none);
       return;
     }
     if (this.client.socket.getCompression() != XMPPSocket.Compression.none) {
@@ -194,7 +197,10 @@ public class XMPPStream {
               }
             }
           } else if (parser.getName().equals("error")) {
-            // TODO
+            parser.next();
+            String error = parser.getName(); // TODO: error-type to description
+            this.client.notifyStreamException(new Exception(error));
+            return;
           } else if (parser.getName().equals("features")) {
             XMPPStreamParsers.parseFeatures(parser, this);
           } else if (parser.getName().equals("failure")) {
