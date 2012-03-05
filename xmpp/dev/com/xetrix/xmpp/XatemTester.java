@@ -41,6 +41,8 @@ public class XatemTester {
         Log.write("  Connection ID: " + xc.getConnectionID(), 7);
         Log.write("  Service: " + xc.getService(), 7);
         Log.write("  Client authed: " + xc.isAuthed(), 7);
+        Log.write("  Lang: " + java.util.Locale.getDefault().getLanguage().toLowerCase(), 7);
+
 
         Thread.currentThread().sleep(5000);
       } catch (InterruptedException e) {

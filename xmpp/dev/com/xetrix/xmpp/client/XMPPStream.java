@@ -13,7 +13,7 @@ public class XMPPStream {
 
   // Life cycle
   private String connectionID = "";
-  private Integer packetId = 0;
+  private Integer stanzaId = 0;
 
   // XML Parser
   private XmlPullParser parser;
@@ -43,14 +43,14 @@ public class XMPPStream {
     return this.connectionID;
   }
 
-  Integer getNextPacketId() {
-    return ++packetId; // TODO: Should be more complex than a serial number
+  Integer getNextStanzaId() {
+    return ++stanzaId; // TODO: Should be more complex than a serial number
   }
 
   void initStream() {
     if (this.client.socket.isConnected()) {
       this.connectionID = "";
-      this.packetId = 0;
+      this.stanzaId = 0;
 
       this.initParser();
       this.initWriter();
@@ -134,8 +134,10 @@ public class XMPPStream {
       return;
     }
     this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
-      this.getNextPacketId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
+      this.getNextStanzaId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
       "<resource>" + this.client.getResource() + "</resource></bind></iq>");
+      // Debug ;-)
+      //<iq type='get'><query id='" + this.getNextStanzaId() + "' xmlns='jabber:iq:roster'/></iq><presence />
   }
 
   // Private methods
@@ -151,7 +153,7 @@ public class XMPPStream {
 
     this.readThread = new Thread() {
       public void run() {
-        parsePackets(this);
+        parseStanzas(this);
       }
     };
     this.readThread.setName("ThreadXMLParser");
@@ -187,7 +189,7 @@ public class XMPPStream {
 
   // Parsers
 
-  private void parsePackets(Thread thread) {
+  private void parseStanzas(Thread thread) {
     try {
       int eventType = parser.getEventType();
       do {
