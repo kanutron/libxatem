@@ -80,13 +80,18 @@ public class XMPPAuth {
   void startAuthWith(String mech) {
     this.currentMech = mech;
     if (mech=="DIGEST-MD5") {
-      this.client.stream.pushStanza("<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='DIGEST-MD5'/>");
+      this.client.stream.pushStanza(
+        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='DIGEST-MD5'/>");
       this.currentStep++;
     } else if (mech=="PLAIN") {
-      String plaindata = Base64.encodeString((char)0 + this.username + (char)0 + this.password);
-      this.client.stream.pushStanza("<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>" + plaindata + "</auth>");
+      String plaindata = Base64.encodeString(
+        (char)0 + this.username + (char)0 + this.password);
+      this.client.stream.pushStanza(
+        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>" +
+        plaindata + "</auth>");
     } else if (mech=="ANONYMOUS") {
-      this.client.stream.pushStanza("<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='ANONYMOUS'/>");
+      this.client.stream.pushStanza(
+        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='ANONYMOUS'/>");
     }
   }
 
@@ -97,7 +102,8 @@ public class XMPPAuth {
           this.processDIGESTMD5(Base64.decodeString(response));
           break;
         case 2:
-          this.client.stream.pushStanza("<response xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
+          this.client.stream.pushStanza(
+            "<response xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
           break;
       }
     }
