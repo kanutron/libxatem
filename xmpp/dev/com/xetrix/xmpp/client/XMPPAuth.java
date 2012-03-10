@@ -11,8 +11,16 @@ import java.security.NoSuchAlgorithmException;
 
 public class XMPPAuth {
   private XMPPClient client;
+  private static List<String> clientMechs = new ArrayList<String>();
   private List<String> serverMechs = new ArrayList<String>();
-  private List<String> clientMechs = new ArrayList<String>();
+
+  // Common class data
+  static {
+    // Order is important. Most secure first
+    clientMechs.add("DIGEST-MD5");
+    clientMechs.add("PLAIN");
+    clientMechs.add("ANONYMOUS");
+  }
 
   // Life cycle
   private String   currentMech = "";
@@ -27,10 +35,6 @@ public class XMPPAuth {
   // Constructors
   public XMPPAuth(XMPPClient c) {
     this.client = c;
-    // Order is important. Most secure first
-    this.clientMechs.add("DIGEST-MD5");
-    this.clientMechs.add("PLAIN");
-    this.clientMechs.add("ANONYMOUS");
   }
 
   void initAuthData(String u, String p, String r, String s) {
@@ -203,28 +207,27 @@ public class XMPPAuth {
         mapChallenge.put("cnonce","");
       }
 
+      // A1
       pack = this.username + ":" + mapChallenge.get("realm") + ":" + this.password;
       md.update(md.digest(pack.getBytes()));
-
       pack = ":" + mapChallenge.get("nonce") + ":" + mapChallenge.get("cnonce");
-      md.update(pack.getBytes());
-
       if (mapChallenge.containsKey("authzid")) {
-        pack = ":" + mapChallenge.get("authzid");
-        md.update(pack.getBytes());
+        pack += ":" + mapChallenge.get("authzid");
       }
-
+      md.update(pack.getBytes());
       String a1md5 = getHexString(md.digest());
+
+      // A2
       pack = "AUTHENTICATE:" + mapChallenge.get("digest-uri");
       String a2md5 = getHexString(md.digest(pack.getBytes()));
 
+      // Hash response
       pack = a1md5 + ":" +
              mapChallenge.get("nonce") + ":" +
              mapChallenge.get("nc") + ":" +
              mapChallenge.get("cnonce") + ":" +
              mapChallenge.get("qop") + ":" +
              a2md5;
-
       return getHexString(md.digest(pack.getBytes()));
 
     } catch (NoSuchAlgorithmException e2) {
