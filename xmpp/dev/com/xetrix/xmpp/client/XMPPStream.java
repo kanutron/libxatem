@@ -135,7 +135,7 @@ public class XMPPStream {
     }
     this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
       this.getNextStanzaId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
-      "<resource>" + this.client.getResource() + "</resource></bind></iq>");
+      "<resource>" + this.client.getResource() + "</resource></bind></iq><iq type='get'><query id='" + this.getNextStanzaId() + "' xmlns='jabber:iq:roster'/></iq><presence />");
       // Debug ;-)
       //<iq type='get'><query id='" + this.getNextStanzaId() + "' xmlns='jabber:iq:roster'/></iq><presence />
   }
@@ -198,6 +198,7 @@ public class XMPPStream {
 
           if (parser.getName().equals("presence")) {
             // TODO:
+            String a = XMPPStanza.getDefaultLanguage();
           } else if (parser.getName().equals("iq")) {
             // TODO
           } else if (parser.getName().equals("message")) {
