@@ -69,7 +69,7 @@ public class XatemTester {
 
     if (this.resource!="") {
       this.xc = new XMPPClient(this.username, this.password, this.resource, 24,
-                               this.server, this.port);
+        this.server, this.port);
     } else {
       this.xc = new XMPPClient(this.username, this.password);
     }

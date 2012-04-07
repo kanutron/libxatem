@@ -13,14 +13,14 @@ public class XMPPClient {
   private String                 password;
   private String                 resource;
   private Integer                priority;
-  private String                 service;
   private String                 host;
   private Integer                port;
+  private String                 service;
 
   // Life cycle control
-  private boolean                connected = false;
-  private boolean                authenticated = false;
-  private boolean                binded = false;
+  private boolean               connected = false;
+  private boolean               authenticated = false;
+  private boolean               binded = false;
 
   // XMPP Client components
   protected XMPPSocket           socket = new XMPPSocket(this);
@@ -82,15 +82,19 @@ public class XMPPClient {
   public Integer getPriority() {
     return this.priority;
   }
-  public String getService() {
-    return this.service;
-  }
   public String getHost() {
     return this.host;
   }
   public Integer getPort() {
     return this.port;
   }
+  public String getService() {
+    return this.service;
+  }
+  public String getConnectionID() {
+    return this.stream.getConnectionID();
+  }
+
   public boolean isConnected() {
     return this.connected && this.socket.isConnected();
   }
@@ -105,9 +109,6 @@ public class XMPPClient {
   }
   public boolean isCompressed() {
     return this.socket.compressed;
-  }
-  public String getConnectionID() {
-    return this.stream.getConnectionID();
   }
 
   public boolean connect(XMPPSocket.Security s) {

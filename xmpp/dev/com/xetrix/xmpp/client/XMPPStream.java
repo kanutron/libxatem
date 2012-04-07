@@ -1,5 +1,7 @@
 package com.xetrix.xmpp.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -105,8 +107,8 @@ public class XMPPStream {
     if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
         !this.client.socket.compressed) {
       this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
-                      "<method>" + this.client.socket.getCompression().toString() +
-                      "</method></compress>");
+                       "<method>" + this.client.socket.getCompression().toString() +
+                       "</method></compress>");
     }
     return true;
   }
@@ -188,7 +190,6 @@ public class XMPPStream {
   }
 
   // Parsers
-
   private void parseStanzas(Thread thread) {
     try {
       int eventType = parser.getEventType();
@@ -214,7 +215,7 @@ public class XMPPStream {
               }
             }
           } else if (parser.getName().equals("features")) {
-            XMPPStreamParsers.parseFeatures(parser, this);
+            parseFeatures(parser, this);
           } else if (parser.getName().equals("error")) {
             // TODO: parseError, throw the Exception and return/finish
             parser.next();
@@ -266,8 +267,88 @@ public class XMPPStream {
     }
   }
 
+  static void parseFeatures(XmlPullParser parser, XMPPStream stream) throws Exception {
+    boolean compressionReceived = false;
+    boolean startTLSReceived = false;
+    boolean startTLSRequired = false;
+
+    while (true) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("starttls")) {
+          startTLSReceived = true;
+        } else if (parser.getName().equals("mechanisms")) {
+          stream.client.saslSetServerMechanisms(parseMechanisms(parser));
+        } else if (parser.getName().equals("compression")) {
+          compressionReceived = true;
+          stream.client.notifyCompressionMethods(parseMethods(parser));
+        } else if (parser.getName().equals("bind")) {
+          stream.doBind();
+        } else if (parser.getName().equals("session")) {
+          // TODO
+        } else if (parser.getName().equals("register")) {
+          // TODO
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("required") && startTLSReceived) {
+          startTLSRequired = true;
+        } else if (parser.getName().equals("features")) {
+          if (startTLSReceived && stream.requestStartTLS(startTLSRequired)) {
+            return;
+          }
+          if (!stream.client.isAuthed()) {
+            stream.client.notifyReadyToLogin();
+            return;
+          }
+          if (compressionReceived && stream.requestCompression()) {
+            return;
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  static List<String> parseMechanisms(XmlPullParser parser) throws Exception {
+    List<String> mechanisms = new ArrayList<String>();
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        String elementName = parser.getName();
+        if (elementName.equals("mechanism")) {
+          mechanisms.add(parser.nextText());
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("mechanisms")) {
+          done = true;
+        }
+      }
+    }
+    return mechanisms;
+  }
+
+  static List<String> parseMethods(XmlPullParser parser) throws Exception {
+    List<String> methods = new ArrayList<String>();
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        String elementName = parser.getName();
+        if (elementName.equals("method")) {
+          methods.add(parser.nextText());
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("compression")) {
+          done = true;
+        }
+      }
+    }
+    return methods;
+  }
+
   // DEBUG METHOD
-  public static String repeat(char c, int i) {
+  static String repeat(char c, int i) {
     String tst = "";
     for(int j = 0; j < i; j++) {
       tst = tst+c;
