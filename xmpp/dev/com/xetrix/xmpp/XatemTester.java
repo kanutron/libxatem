@@ -3,6 +3,10 @@ package com.xetrix.xmpp;
 import java.io.Console;
 
 import com.xetrix.xmpp.client.XMPPClient;
+import com.xetrix.xmpp.client.XMPPClientListener;
+import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.client.XMPPStanzaIQBind;
+
 import com.xetrix.xmpp.util.Log;
 
 import jargs.gnu.CmdLineParser;
@@ -31,48 +35,73 @@ public class XatemTester {
     while (true) {
       try {
         if (!xc.isConnected()) {
-          Log.write("Client died", 1);
           System.exit(2);
         }
-        Log.write("XATEM Tester still running", 7);
-        Log.write("  Client connected: " + xc.isConnected(), 7);
-        Log.write("  Socket securized: " + xc.isSecurized(), 7);
-        Log.write("  Socket compression: " + xc.isCompressed(), 7);
-        Log.write("  Connection ID: " + xc.getConnectionID(), 7);
-        Log.write("  Service: " + xc.getService(), 7);
-        Log.write("  Client authed: " + xc.isAuthed(), 7);
-        Log.write("  Lang: " + java.util.Locale.getDefault().getLanguage().toLowerCase(), 7);
-
-
-        Thread.currentThread().sleep(5000);
+        Thread.currentThread().sleep(2500);
       } catch (InterruptedException e) {
       }
     }
   }
 
   public void connectClient() {
-    Log.write("Connecting client...", 6);
-    if (xc.connect(this.socksec)) {
-      Log.write("Client connected", 6);
-    } else {
-      Log.write("Client not connected", 3);
+    if (!xc.connect(this.socksec)) {
+      Log.write("Error connecting.", 3);
     }
   }
 
   public void initClient() {
     Log.write("Initiating client...", 6);
-    Log.write("Username: " + this.username, 7);
-    Log.write("Resource: " + this.resource, 7);
-    Log.write("Server: " + this.server, 7);
-    Log.write("Port: " + this.port, 7);
-    Log.write("Security: " + this.socksec, 7);
-
     if (this.resource!="") {
       this.xc = new XMPPClient(this.username, this.password, this.resource, 24,
         this.server, this.port);
     } else {
       this.xc = new XMPPClient(this.username, this.password);
     }
+
+    this.xc.setListener(new XMPPClientListener() {
+      // Event Handlers
+      public void onConnect() {
+        Log.write("Connected.",6);
+      }
+      public void onDisconnect() {
+        Log.write("Disconnected.",1);
+      }
+      public void onSecurized() {
+        Log.write("SSL handshake done.",6);
+      }
+      public void onCompressed() {
+        Log.write("Compression enabled.",6);
+      }
+      public void onConnectionError(XMPPError e) {
+        Log.write(e.toString(),3);
+      }
+      public void onStreamOpened(String cid, String from) {
+        Log.write("Stream opened; from: " + from + ", id: " + cid,6);
+      }
+      public void onStreamClosed() {
+        Log.write("Stream closed.",6);
+      }
+      public void onStreamError(XMPPError e) {
+        Log.write(e.toString(),3);
+      }
+      public void onReadyforAuthentication() {
+        Log.write("Ready to authenticate.",6);
+      }
+      public void onAuthenticated() {
+        Log.write("Authenticated",6);
+      }
+      public void onResourceBinded(XMPPStanzaIQBind bind) {
+        Log.write("Binded as " + xc.getFullJid(),6);
+        /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
+          public String getPayloadXML() {
+            return "<query xmlns=\"jabber:iq:roster\"></query>";
+          }
+        };
+        iq.setFrom(this.getFullJid());
+        this.stream.pushStanza(iq);
+        this.stream.pushStanza("<presence></presence>");*/
+      }
+    });
   }
 
   public static void banner() {

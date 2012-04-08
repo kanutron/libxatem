@@ -15,6 +15,7 @@ rm -f $CLS.jar
 find -iname *.class -exec rm {} \;
 
 echo "building $PKG$CLS..."
+javac -Xlint:unchecked $SRC/client/*.java || exit 1
 javac -Xlint:unchecked $SRC/*.java || exit 1
 
 echo "creating JAR for $PKG$CLS..."

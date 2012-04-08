@@ -34,26 +34,26 @@ public class XMPPAuth {
 
   // Constructors
   public XMPPAuth(XMPPClient c) {
-    this.client = c;
+    client = c;
   }
 
   void initAuthData(String u, String p, String r, String s) {
-    this.username = u;
-    this.password = p;
-    this.resource = r;
-    this.service  = s;
+    username = u;
+    password = p;
+    resource = r;
+    service  = s;
   }
 
   void setServerMechanisms(List<String> mechs) {
-    this.serverMechs = mechs;
+    serverMechs = mechs;
   }
 
   List<String> getServerMechanisms() {
-    return this.serverMechs;
+    return serverMechs;
   }
 
   List<String> getClientMechanisms() {
-    return this.clientMechs;
+    return clientMechs;
   }
 
   List<String> getAvailableMechanisms() {
@@ -62,7 +62,7 @@ public class XMPPAuth {
     Iterator itr = clientMechs.iterator();
     while(itr.hasNext()) {
       Object m = itr.next();
-      if (this.serverMechs.contains(m)) {
+      if (serverMechs.contains(m)) {
         mechs.add((String)m);
       }
     }
@@ -74,7 +74,7 @@ public class XMPPAuth {
     Iterator itr = clientMechs.iterator();
     while(itr.hasNext()) {
       Object m = itr.next();
-      if (this.serverMechs.contains(m)) {
+      if (serverMechs.contains(m)) {
         return (String)m;
       }
     }
@@ -82,31 +82,31 @@ public class XMPPAuth {
   }
 
   void startAuthWith(String mech) {
-    this.currentMech = mech;
+    currentMech = mech;
     if (mech=="DIGEST-MD5") {
-      this.client.stream.pushStanza(
+      client.stream.pushStanza(
         "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='DIGEST-MD5'/>");
-      this.currentStep++;
+      currentStep++;
     } else if (mech=="PLAIN") {
       String plaindata = Base64.encodeString(
-        (char)0 + this.username + (char)0 + this.password);
-      this.client.stream.pushStanza(
+        (char)0 + username + (char)0 + password);
+      client.stream.pushStanza(
         "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>" +
         plaindata + "</auth>");
     } else if (mech=="ANONYMOUS") {
-      this.client.stream.pushStanza(
+      client.stream.pushStanza(
         "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='ANONYMOUS'/>");
     }
   }
 
   void processResponse(String response) {
-    if (this.currentMech=="DIGEST-MD5") {
-      switch (this.currentStep) {
+    if (currentMech=="DIGEST-MD5") {
+      switch (currentStep) {
         case 1:
-          this.processDIGESTMD5(Base64.decodeString(response));
+          processDIGESTMD5(Base64.decodeString(response));
           break;
         case 2:
-          this.client.stream.pushStanza(
+          client.stream.pushStanza(
             "<response xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
           break;
       }
@@ -140,7 +140,7 @@ public class XMPPAuth {
 
     // Fix challenge
     if (!mapChallenge.containsKey("digest-uri")) {
-      mapChallenge.put("digest-uri", "xmpp/" + this.service);
+      mapChallenge.put("digest-uri", "xmpp/" + service);
     }
     if (mapChallenge.containsKey("qop")) {
       String qop = mapChallenge.get("qop");
@@ -158,8 +158,13 @@ public class XMPPAuth {
     mapChallenge.put("cnonce", new String(Base64.encode(tmpRand)));
 
     // Prepare response
-    mapResponse.put("username",this.username);
-    mapResponse.put("response",this.processDIGESTMD5cryptpassword(mapChallenge));
+    String cPass = processDIGESTMD5cryptpassword(mapChallenge);
+    if (cPass.equals("")) {
+      return;
+    }
+
+    mapResponse.put("username",username);
+    mapResponse.put("response",cPass);
     mapResponse.put("charset","utf-8");
     mapResponse.put("nc","00000001");
     mapResponse.put("qop","auth");
@@ -190,8 +195,8 @@ public class XMPPAuth {
     response.append("</response>");
 
     // Send response
-    this.currentStep++;
-    this.client.stream.pushStanza(response.toString());
+    currentStep++;
+    client.stream.pushStanza(response.toString());
   }
 
   private String processDIGESTMD5cryptpassword(Map<String,String> mapChallenge) {
@@ -208,7 +213,7 @@ public class XMPPAuth {
       }
 
       // A1
-      pack = this.username + ":" + mapChallenge.get("realm") + ":" + this.password;
+      pack = username + ":" + mapChallenge.get("realm") + ":" + password;
       md.update(md.digest(pack.getBytes()));
       pack = ":" + mapChallenge.get("nonce") + ":" + mapChallenge.get("cnonce");
       if (mapChallenge.containsKey("authzid")) {
@@ -231,7 +236,8 @@ public class XMPPAuth {
       return getHexString(md.digest(pack.getBytes()));
 
     } catch (NoSuchAlgorithmException e2) {
-      this.client.notifyStreamException(e2);
+      client.onStreamError(new XMPPError(XMPPError.Type.AUTH,
+        "feature-not-implemented", "No susch algorithm MD5 implemented."));
       return "";
     }
   }

@@ -3,8 +3,6 @@ package com.xetrix.xmpp.client;
 import java.util.List;
 import java.io.IOException;
 
-import com.xetrix.xmpp.util.Log; // DUBG
-
 public class XMPPClient {
   private static final String    CLIENT_NAME = "xatem";
 
@@ -27,96 +25,115 @@ public class XMPPClient {
   protected XMPPStream           stream = new XMPPStream(this);
   protected XMPPAuth             auth;
 
+  // Event listeners
+  private XMPPClientListener     listener;
+
   // Constructors
-  public XMPPClient(String u, String p, String r, Integer pr, String host, Integer port, String serv) {
-    this.username = u;
-    this.password = p;
-    this.resource = r;
-    this.priority = pr;
-    this.host = host;
-    this.port = port;
-    this.service = serv;
+  public XMPPClient(String u, String p, String r, Integer pr, String h, Integer prt, String s) {
+    username = u;
+    password = p;
+    resource = r;
+    priority = pr;
+    host = h;
+    port = prt;
+    service = s;
   }
 
-  public XMPPClient(String u, String p, String r, Integer pr, String host, Integer port) {
-    this.username = u;
-    this.password = p;
-    this.resource = r;
-    this.priority = pr;
-    this.host = host;
-    this.port = port;
-    if (this.username.indexOf("@")>0) {
-      this.service = this.username.substring(this.username.indexOf("@")+1);
+  public XMPPClient(String u, String p, String r, Integer pr, String h, Integer prt) {
+    username = u;
+    password = p;
+    resource = r;
+    priority = pr;
+    host = h;
+    port = prt;
+    if (username.indexOf("@")>0) {
+      service = username.substring(username.indexOf("@")+1);
     } else {
-      this.service = host;
+      service = host;
     }
   }
 
   public XMPPClient(String u, String p, String r, Integer pr) {
-    this.username = u;
-    this.password = p;
-    this.resource = r;
-    this.priority = pr;
-    this.host = this.username.substring(this.username.indexOf("@")+1);
-    this.port = 5222;
-    this.service = this.host;
+    username = u;
+    password = p;
+    resource = r;
+    priority = pr;
+    host = username.substring(username.indexOf("@")+1);
+    port = 5222;
+    service = host;
   }
 
   public XMPPClient(String u, String p) {
-    this.username = u;
-    this.password = p;
-    this.resource = CLIENT_NAME;
-    this.priority = 24;
-    this.host = this.username.substring(this.username.indexOf("@")+1);
-    this.port = 5222;
-    this.service = this.host;
+    username = u;
+    password = p;
+    resource = CLIENT_NAME;
+    priority = 24;
+    host = username.substring(username.indexOf("@")+1);
+    port = 5222;
+    service = host;
   }
 
   // Public methods
+  public void setListener(XMPPClientListener l) {
+    listener = l;
+  }
+
+  public String getJid() {
+    if (username.indexOf("@")>0) {
+      return username;
+    } else {
+      return username + "@" + host;
+    }
+  }
+  public String getFullJid() {
+    return getJid() + "/" + getResource();
+  }
   public String getUsername() {
-    return this.username;
+    return username;
   }
   public String getResource() {
-    return this.resource;
+    return resource;
   }
   public Integer getPriority() {
-    return this.priority;
+    return priority;
   }
   public String getHost() {
-    return this.host;
+    return host;
   }
   public Integer getPort() {
-    return this.port;
+    return port;
   }
   public String getService() {
-    return this.service;
+    return service;
   }
   public String getConnectionID() {
-    return this.stream.getConnectionID();
+    return stream.getConnectionID();
   }
 
+  // Life cycle
   public boolean isConnected() {
-    return this.connected && this.socket.isConnected();
-  }
-  public boolean isAuthed() {
-    return this.authenticated;
-  }
-  public boolean isBinded() {
-    return this.binded;
+    return connected && socket.isConnected();
   }
   public boolean isSecurized() {
-    return this.socket.securized;
+    return socket.securized;
   }
   public boolean isCompressed() {
-    return this.socket.compressed;
+    return socket.compressed;
+  }
+  public boolean isAuthed() {
+    return authenticated;
+  }
+  public boolean isBinded() {
+    return binded;
   }
 
+  // Mehtods
   public boolean connect(XMPPSocket.Security s) {
-    this.socket = new XMPPSocket(this);
-    if (this.socket.setSecurity(s)) {
-      if (this.socket.connect(this.host, this.port)) {
-        this.connected = true;
-        this.stream.initStream();
+    socket = new XMPPSocket(this);
+    if (socket.setSecurity(s)) {
+      if (socket.connect(host, port)) {
+        connected = true;
+        stream.initStream();
         return true;
       }
     }
@@ -125,105 +142,148 @@ public class XMPPClient {
 
   public boolean connect(Integer s) {
     switch (s) {
-      case 0: return this.connect(XMPPSocket.Security.none);
-      case 1: return this.connect(XMPPSocket.Security.ssl);
-      case 2: return this.connect(XMPPSocket.Security.tls);
+      case 0: return connect(XMPPSocket.Security.none);
+      case 1: return connect(XMPPSocket.Security.ssl);
+      case 2: return connect(XMPPSocket.Security.tls);
     }
     return false;
   }
 
   public boolean connect(String s) {
-    return this.connect(XMPPSocket.Security.fromString(s));
+    return connect(XMPPSocket.Security.fromString(s));
   }
 
   public boolean connect() {
-    return this.connect(XMPPSocket.Security.none);
+    return connect(XMPPSocket.Security.none);
   }
 
   public boolean disconnect() {
-    this.stream.finishStream();
-    this.socket.disconnect();
+    stream.finishStream();
+    socket.disconnect();
 
-    this.connected = false;
-    this.authenticated = false;
-    this.binded = false;
+    connected = false;
+    authenticated = false;
+    binded = false;
 
-    this.stream = new XMPPStream(this);
-    this.socket = new XMPPSocket(this);
+    stream = new XMPPStream(this);
+    socket = new XMPPSocket(this);
 
     return true;
   }
 
-  // Package methods
-  void setService(String s) {
-    this.service = s;
-  }
-
-  void saslSetServerMechanisms(List<String> mechs) {
-    this.auth = new XMPPAuth(this);
-    this.auth.setServerMechanisms(mechs);
-  }
-
-  void notifyCompressionMethods(List<String> methods) {
-    this.socket.compressionSetServerMethods(methods);
-  }
-
-  void notifyAuthenticated() {
-    this.authenticated=true;
-    this.auth = null; // Clear memory
-  }
-
-  void notifyReadyToLogin() {
-    // Already authenticated
-    if (this.authenticated) {
-      Log.write("Already authenticated.", 5);
-      return;
+  // Event Handlers
+  void onConnect() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onConnect();
     }
+  }
 
-    // Wait for secure socket
-    if (this.socket.getSecurity() != XMPPSocket.Security.none &&
-        !this.socket.securized) {
-      Log.write("Wait for secure socket before authentication.", 6);
-      return;
+  void onDisconnect() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onDisconnect();
     }
+  }
 
-    String mech = this.auth.getBestMechanism();
+  void onSecurized() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onSecurized();
+    }
+  }
+
+  void onCompressed() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onCompressed();
+    }
+  }
+
+  void onConnectionError(XMPPError e) {
+    if (listener instanceof XMPPClientListener) {
+      listener.onConnectionError(e);
+    }
+    if (connected) {
+      if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
+        disconnect();
+      }
+    }
+  }
+
+  void onStreamOpened(String cid, String from) {
+    if (cid != null) {
+      stream.setConnectionID(cid);
+    }
+    if (from != null) {
+      service = from;
+    }
+    if (listener instanceof XMPPClientListener) {
+      listener.onStreamOpened(cid, from);
+    }
+  }
+
+  void onStreamClosed() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onStreamClosed();
+    }
+    if (connected) {
+      disconnect();
+    }
+  }
+
+  void onStreamError(XMPPError e) {
+    if (listener instanceof XMPPClientListener) {
+      listener.onStreamError(e);
+    }
+    if (connected) {
+      if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
+        disconnect();
+      }
+    }
+  }
+
+  void onReceiveSASLMechanisms(List<String> mechs) {
+    auth = new XMPPAuth(this);
+    auth.setServerMechanisms(mechs);
+    if (listener instanceof XMPPClientListener) {
+      listener.onReceiveSASLMechanisms(mechs);
+    }
+  }
+
+  void onReceiveCompressionMethods(List<String> methods) {
+    socket.compressionSetServerMethods(methods);
+    if (listener instanceof XMPPClientListener) {
+      listener.onReceiveCompressionMethods(methods);
+    }
+  }
+
+  void onReadyforAuthentication() {
+    if (listener instanceof XMPPClientListener) {
+      listener.onReadyforAuthentication();
+    }
+    String mech = auth.getBestMechanism();
     if (mech != "") {
-      Log.write("Starting SASL with " + mech, 6);
-      this.auth.initAuthData(this.username, this.password, this.resource, this.service);
-      this.auth.startAuthWith(mech);
+      auth.initAuthData(username, password, resource, service);
+      auth.startAuthWith(mech);
     } else {
-      notifyStreamException(
-        new Exception("No suitable SASL mechanisms found. Can't login."));
+      onStreamError(new XMPPError(XMPPError.Type.AUTH, "feature-not-implemented",
+        "No suitable SASL mechanisms found. Can't login."));
     }
   }
 
-  // Exception handlers
-  void notifyLoginFailed(Exception e) {
-    Log.write("Login exception.",7);
-    Log.write(e.getMessage(),3);
-    e.printStackTrace();
-    if (this.connected)
-      this.disconnect();
+  void onAuthenticated() {
+    authenticated = true;
+    auth = null;
+    if (listener instanceof XMPPClientListener) {
+      listener.onAuthenticated();
+    }
   }
 
-  void notifySocketException(Exception e) {
-    Log.write("Socket exception.",7);
-    Log.write(e.getMessage(),3);
-    e.printStackTrace();
-    // TODO: reconnection stuff
-    if (this.connected)
-      this.disconnect();
+  void onResourceBinded(XMPPStanzaIQBind bind) {
+    binded = true;
+    username = bind.getJid();
+    if (bind.getResource() != null) {
+      resource = bind.getResource();
+    }
+    if (listener instanceof XMPPClientListener) {
+      listener.onResourceBinded(bind);
+    }
   }
-
-  void notifyStreamException(Exception e) {
-    Log.write("Stream exception.",7);
-    Log.write(e.getMessage(),3);
-    e.printStackTrace();
-    // TODO: reconnection stuff
-    if (this.connected)
-      this.disconnect();
-  }
-
-  // Private methods
 }

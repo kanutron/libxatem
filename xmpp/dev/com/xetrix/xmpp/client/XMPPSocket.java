@@ -36,84 +36,87 @@ public class XMPPSocket {
 
   // Constructors
   public XMPPSocket(XMPPClient c) {
-    this.client = c;
+    client = c;
   }
 
   // Pulic methods
   public boolean setSecurity(Security s) {
-    if (this.securized) {
+    if (securized) {
       return false;
     }
-    this.security = s;
+    security = s;
     return true;
   }
 
   public Security getSecurity() {
-    return this.security;
+    return security;
   }
 
   public boolean setCompression(Compression c) {
-    if (this.compressed) {
+    if (compressed) {
       return false;
     }
-    this.compression = c;
+    compression = c;
     return true;
   }
 
   public Compression getCompression() {
-    return this.compression;
+    return compression;
   }
 
   public boolean connect(String h, Integer p) {
-    this.securized = false;
-    this.compressed = false;
-    this.host = h;
-    this.port = p;
+    securized = false;
+    compressed = false;
+    host = h;
+    port = p;
 
-    if (this.security == Security.ssl) {
-      return this.openPlain() && this.enableTLS();
+    if (security == Security.ssl) {
+      return openPlain() && enableTLS();
     } else {
-      return this.openPlain();
+      return openPlain();
     }
   }
 
   public boolean disconnect() {
-    this.securized = false;
-    this.compressed = false;
+    securized = false;
+    compressed = false;
     try {
-      if (this.socket.isConnected()) {
-        this.socket.close();
+      if (socket.isConnected()) {
+        socket.close();
       }
     } catch (Exception e) {
-      this.client.notifySocketException(e);
+      client.onConnectionError(new XMPPError(XMPPError.Type.CANCEL, "gone",
+        "Error clossing socket: " + e.getMessage()));
+    } finally {
+      client.onDisconnect();
     }
     return true;
   }
 
   public boolean isConnected() {
-    return this.socket.isConnected();
+    return socket.isConnected();
   }
 
   public boolean enableTLS() {
-    if (this.securized || !this.socket.isConnected()) {
+    if (securized || !socket.isConnected()) {
       return false;
     }
     try {
       // TODO: Verify server certs.
       SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-      Socket plain = this.socket;
-      this.socket = socketFactory.createSocket(plain, plain.getInetAddress().getHostName(),
+      Socket plain = socket;
+      socket = socketFactory.createSocket(plain, plain.getInetAddress().getHostName(),
                                                plain.getPort(), true);
-      ((SSLSocket) this.socket).addHandshakeCompletedListener(new HSListener());
-      this.socket.setSoTimeout(0);
-      this.socket.setKeepAlive(true);
-      ((SSLSocket) this.socket).startHandshake();
+      ((SSLSocket) socket).addHandshakeCompletedListener(new HSListener());
+      socket.setSoTimeout(0);
+      socket.setKeepAlive(true);
+      ((SSLSocket) socket).startHandshake();
 
       Integer whaitHS = 0;
       try {
         while (whaitHS < SSL_HANDSHAKE_MAX_TIME) {
-          if (this.securized == true) {
-            return this.initIO();
+          if (securized == true) {
+            return initIO();
           } else {
             whaitHS += 125;
             Thread.currentThread().sleep(125);
@@ -124,30 +127,36 @@ public class XMPPSocket {
         return false;
       }
     } catch (Exception e) {
-      this.client.notifySocketException(e);
+      client.onConnectionError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
+        "Error on SSL Handshake: " + e.getMessage()));
+      if (!socket.isConnected()) {
+        client.onDisconnect();
+      }
     }
     return false;
   }
 
   public boolean enableCompression() {
-    if (!this.compressed && this.compression != Compression.none &&
-        this.socket.isConnected()) {
-      this.compressed = this.initIO();
+    if (!compressed && compression != Compression.none && socket.isConnected()) {
+      compressed = initIO();
     }
-    return this.compressed;
+    if (compressed) {
+      client.onCompressed();
+    }
+    return compressed;
   }
 
   public void compressionSetServerMethods(List<String> methods) {
     if (methods.contains(Compression.zlib.toString())) {
       try {
         Class.forName("com.jcraft.jzlib.ZOutputStream");
-        this.compression = Compression.zlib;
+        compression = Compression.zlib;
         return;
       } catch (ClassNotFoundException e) {
-        this.compression = Compression.none;
+        compression = Compression.none;
       }
     }
-    this.compression = Compression.none;
+    compression = Compression.none;
   }
 
   public enum Security {
@@ -180,12 +189,13 @@ public class XMPPSocket {
   // Private methods
   private boolean openPlain() {
     try {
-      this.socket = new Socket(this.host, this.port);
+      socket = new Socket(host, port);
       while (true) {
         try {
-          if (this.socket.isConnected()) {
-            if (this.security != Security.ssl) {
-              return this.initIO();
+          if (socket.isConnected()) {
+            client.onConnect();
+            if (security != Security.ssl) {
+              return initIO();
             } else {
               return true;
             }
@@ -196,23 +206,26 @@ public class XMPPSocket {
         }
       }
     } catch (Exception e) {
-      this.client.notifySocketException(e);
+      e.printStackTrace();
+      client.onConnectionError(new XMPPError(XMPPError.Type.CANCEL,
+        "undefined-condition", "Error opening socket: " + e.getMessage()));
     }
     return false;
   }
 
   private boolean initIO() {
-    if (this.compression == Compression.none) {
+    if (compression == Compression.none) {
       try {
-        this.reader = new BufferedReader(new InputStreamReader(
-          this.socket.getInputStream(), "UTF-8"));
-        this.writer = new BufferedWriter(new OutputStreamWriter(
-          this.socket.getOutputStream(), "UTF-8"));
+        reader = new BufferedReader(new InputStreamReader(
+          socket.getInputStream(), "UTF-8"));
+        writer = new BufferedWriter(new OutputStreamWriter(
+          socket.getOutputStream(), "UTF-8"));
         return true;
       } catch (Exception e) {
-        this.client.notifySocketException(e);
+        client.onConnectionError(new XMPPError(XMPPError.Type.CANCEL,
+          "undefined-condition", "Error initializing buffers: " + e.getMessage()));
       }
-    } else if (this.compression == Compression.zlib) {
+    } else if (compression == Compression.zlib) {
       try {
         Class<?> ziClass = Class.forName("com.jcraft.jzlib.ZInputStream");
         Constructor<?> constructor = ziClass.getConstructor(InputStream.class);
@@ -229,7 +242,8 @@ public class XMPPSocket {
         writer = new BufferedWriter(new OutputStreamWriter((OutputStream) out, "UTF-8"));
         return true;
       } catch (Exception e) {
-        this.client.notifySocketException(e);
+        client.onConnectionError(new XMPPError(XMPPError.Type.CONTINUE,
+          "feature-not-implemented", "Compression not available: " + e.getMessage()));
       }
     }
     return false;
@@ -238,6 +252,7 @@ public class XMPPSocket {
   // Listeners
   class HSListener implements HandshakeCompletedListener {
     public void handshakeCompleted(HandshakeCompletedEvent e) {
+      client.onSecurized();
       securized = true;
     }
   }

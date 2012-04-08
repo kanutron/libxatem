@@ -28,7 +28,7 @@ public class XMPPStream {
 
   // Constructors
   public XMPPStream(XMPPClient c) {
-    this.client = c;
+    client = c;
   }
 
   // Package methods
@@ -37,12 +37,24 @@ public class XMPPStream {
       stanzaOutQueue.put(s);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      this.client.notifyStreamException(e);
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
+        "service-unavailable", e.getMessage()));
     }
   }
 
+  void pushStanza(XMPPStanza s) {
+    if (s.getId() == null) {
+      s.setId(getNextStanzaId().toString());
+    }
+    pushStanza(s.toXML());
+  }
+
   String getConnectionID() {
-    return this.connectionID;
+    return connectionID;
+  }
+
+  void setConnectionID(String cid) {
+    connectionID = cid;
   }
 
   Integer getNextStanzaId() {
@@ -50,129 +62,129 @@ public class XMPPStream {
   }
 
   void initStream() {
-    if (this.client.socket.isConnected()) {
-      this.connectionID = "";
-      this.stanzaId = 0;
+    if (client.socket.isConnected()) {
+      connectionID = "";
+      stanzaId = 0;
 
-      this.initParser();
-      this.initWriter();
+      initParser();
+      initWriter();
 
-      this.pushStanza(
-        "<stream:stream to=\"" + this.client.getService() +
+      pushStanza("<stream:stream to=\"" + client.getService() +
         "\" xmlns:stream=\"http://etherx.jabber.org/streams\" " +
-           "xmlns=\"jabber:client\" version=\"1.0\">");
+        "xmlns=\"jabber:client\" version=\"1.0\">");
     }
   }
 
   void finishStream() {
-    this.parserDone = true;
-    this.readThread.interrupt();
-    this.readThread = new Thread();
-    this.writeThread.interrupt();
-    this.writeThread = new Thread();
+    parserDone = true;
+    readThread.interrupt();
+    readThread = new Thread();
+    writeThread.interrupt();
+    writeThread = new Thread();
 
-    if (this.client.socket.isConnected()) {
+    if (client.socket.isConnected()) {
       try {
-        this.client.socket.writer.write("</stream:stream>");
-        this.client.socket.writer.flush();
+        client.socket.writer.write("</stream:stream>");
+        client.socket.writer.flush();
       } catch (Exception e) {
       }
     }
   }
 
   boolean requestStartTLS(boolean required) throws Exception {
-    if (this.client.socket.getSecurity() == XMPPSocket.Security.tls) {
-      this.pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
+    if (client.socket.getSecurity() == XMPPSocket.Security.tls) {
+      pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
       return true;
     } else if (required) {
-      this.client.notifyStreamException(
-        new Exception("TLS required by server but not allowed by this actual client settings."));
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "not-allowed",
+        "TLS required by server but not allowed by this actual client settings."));
       return true; // Connection will be terminated. Notify the parser.
     }
     return false;
   }
 
   boolean requestCompression() {
-    if (this.client.socket.getSecurity() != XMPPSocket.Security.none &&
-        this.client.socket.securized == false) {
+    if (client.socket.getSecurity() != XMPPSocket.Security.none &&
+        client.socket.securized == false) {
       // We should wait for TLS before compression.
       // Once negotiated TLS, server could not offer compression.
-      this.client.socket.setCompression(XMPPSocket.Compression.none);
+      client.socket.setCompression(XMPPSocket.Compression.none);
       return false;
     }
-    if (!this.client.isAuthed()) {
+    if (!client.isAuthed()) {
       // We should wait for SASL authentication before compression.
       return false;
     }
-    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
-        !this.client.socket.compressed) {
-      this.pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
-                       "<method>" + this.client.socket.getCompression().toString() +
-                       "</method></compress>");
+    if (client.socket.getCompression() != XMPPSocket.Compression.none &&
+        !client.socket.compressed) {
+      pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
+                 "<method>" + client.socket.getCompression().toString() +
+                 "</method></compress>");
     }
     return true;
   }
 
   void startTLS() {
-    if (this.client.socket.enableTLS()) {
-      this.initStream();
+    if (client.socket.enableTLS()) {
+      initStream();
     } else {
-      this.client.notifyStreamException(new Exception("Start TLS failed."));
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
+        "Start TLS failed."));
     }
   }
 
   void startCompression() {
-    if (this.client.socket.enableCompression()) {
-      this.initStream();
+    if (client.socket.enableCompression()) {
+      initStream();
     } else {
-      this.client.notifyStreamException(new Exception("Start compression failed."));
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
+        "Start compression failed."));
     }
   }
 
   void doBind() {
-    if (this.client.socket.getCompression() != XMPPSocket.Compression.none &&
-        !this.client.socket.compressed) {
+    if (client.socket.getCompression() != XMPPSocket.Compression.none &&
+        !client.socket.compressed) {
       // We should wait for compression before resource binding.
       return;
     }
-    this.pushStanza("<iq xmlns=\"jabber:client\" type=\"set\" id=\"" +
-      this.getNextStanzaId() + "\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">" +
-      "<resource>" + this.client.getResource() + "</resource></bind></iq><iq type='get'><query id='" + this.getNextStanzaId() + "' xmlns='jabber:iq:roster'/></iq><presence />");
-      // Debug ;-)
-      //<iq type='get'><query id='" + this.getNextStanzaId() + "' xmlns='jabber:iq:roster'/></iq><presence />
+
+    XMPPStanzaIQBind bind = new XMPPStanzaIQBind(client.getFullJid());
+    pushStanza(bind);
   }
 
   // Private methods
   private void initParser() {
-    this.parserDone = false;
+    parserDone = false;
     try {
-      this.parser = new MXParser();
-      this.parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
-      this.parser.setInput(this.client.socket.reader);
+      parser = new MXParser();
+      parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
+      parser.setInput(client.socket.reader);
     } catch (Exception e) {
-      this.client.notifyStreamException(e);
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
+        "undefined-condition", "Parser does not initialize: " + e.getMessage()));
     }
 
-    this.readThread = new Thread() {
+    readThread = new Thread() {
       public void run() {
         parseStanzas(this);
       }
     };
-    this.readThread.setName("ThreadXMLParser");
-    this.readThread.setDaemon(true);
-    this.readThread.start();
+    readThread.setName("ThreadXMLParser");
+    readThread.setDaemon(true);
+    readThread.start();
   }
 
   private void initWriter() {
     stanzaOutQueue.clear();
-    this.writeThread = new Thread() {
+    writeThread = new Thread() {
       public void run() {
         procOutQueue(this);
       }
     };
-    this.writeThread.setName("ThreadStanzaOutQueue");
-    this.writeThread.setDaemon(true);
-    this.writeThread.start();
+    writeThread.setName("ThreadStanzaOutQueue");
+    writeThread.setDaemon(true);
+    writeThread.start();
   }
 
   private void procOutQueue(Thread thread) {
@@ -180,12 +192,13 @@ public class XMPPStream {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
         Log.write("<<< " + stanza , 7); // DEBUG
-        this.client.socket.writer.write(stanza);
-        this.client.socket.writer.flush();
+        client.socket.writer.write(stanza);
+        client.socket.writer.flush();
       }
     } catch (InterruptedException e) {
     } catch (Exception e) {
-      this.client.notifyStreamException(e);
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "gone",
+        "Error sending packets: " + e.getMessage()));
     }
   }
 
@@ -201,73 +214,163 @@ public class XMPPStream {
             // TODO:
             String a = XMPPStanza.getDefaultLanguage();
           } else if (parser.getName().equals("iq")) {
-            // TODO
+            XMPPStanzaIQ iq = parseIQ(parser);
           } else if (parser.getName().equals("message")) {
             // TODO
           } else if (parser.getName().equals("stream")) {
             if ("jabber:client".equals(parser.getNamespace(null))) {
+              String cid = null;
+              String from = null;
               for (int i=0; i<parser.getAttributeCount(); i++) {
                 if (parser.getAttributeName(i).equals("id")) {
-                  this.connectionID = parser.getAttributeValue(i);
+                  cid = parser.getAttributeValue(i);
                 } else if (parser.getAttributeName(i).equals("from")) {
-                  this.client.setService(parser.getAttributeValue(i));
+                  from = parser.getAttributeValue(i);
                 }
               }
+              client.onStreamOpened(cid, from);
             }
           } else if (parser.getName().equals("features")) {
-            parseFeatures(parser, this);
+            parseFeatures(parser);
           } else if (parser.getName().equals("error")) {
-            // TODO: parseError, throw the Exception and return/finish
-            parser.next();
-            String error = parser.getName();
-            this.client.notifyStreamException(new Exception(error));
+            client.onStreamError(parseError(parser));
             return;
           } else if (parser.getName().equals("failure")) {
             String namespace = parser.getNamespace(null);
             if ("urn:ietf:params:xml:ns:xmpp-tls".equals(namespace)) {
-              this.client.notifySocketException(new Exception("TLS failure received."));
+              client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
+                "service-unavailable", "TLS failure received")); // TODO: parse
               return;
             } else if ("http://jabber.org/protocol/compress".equals(namespace)) {
-              this.client.notifySocketException(new Exception("Compression failure received."));
-              return;
+              client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
+                "service-unavailable", "Compression failure received.")); // TODO: parse
             } else if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
-              this.client.notifyLoginFailed(new Exception("Login process failed."));
+              client.onStreamError(new XMPPError(XMPPError.Type.AUTH,
+                "forbidden", "Login process failed.")); // TODO: parse
               return;
             } else {
-              this.client.notifyStreamException(new Exception("Unknown failure received."));
+              client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
+                "undefined-condition", "Unknown failure received.")); // TODO: parse
               return;
             }
           } else if (parser.getName().equals("challenge")) {
             String challengeData = parser.nextText();
-            this.client.auth.processResponse(challengeData);
+            client.auth.processResponse(challengeData);
           } else if (parser.getName().equals("success")) {
             String namespace = parser.getNamespace(null);
             if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
-              this.client.notifyAuthenticated();
-              this.initStream();
+              client.onAuthenticated();
+              initStream();
               return;
             }
           } else if (parser.getName().equals("compressed")) {
-            this.startCompression();
+            startCompression();
             return;
           }
         } else if (eventType == XmlPullParser.END_TAG) {
           if (parser.getName().equals("proceed")) {
-            this.startTLS();
+            startTLS();
             return;
           } else if (parser.getName().equals("stream")) {
-            this.client.disconnect();
+            client.onStreamClosed();
             return;
           }
         }
         eventType = parser.next();
-      } while (!this.parserDone && eventType != XmlPullParser.END_DOCUMENT && thread == readThread);
+      } while (!parserDone && eventType != XmlPullParser.END_DOCUMENT && thread == readThread);
     } catch (Exception e) {
-      this.client.notifyStreamException(e);
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "gone",
+        "Error parsing input stream."));
     }
   }
 
-  static void parseFeatures(XmlPullParser parser, XMPPStream stream) throws Exception {
+  private XMPPStanzaIQ parseIQ(XmlPullParser parser) throws Exception {
+    XMPPStanzaIQ iq = null;
+    String lang = getLanguageAttribute(parser);
+    String from = parser.getAttributeValue("", "from");
+    String id = parser.getAttributeValue("", "id");
+    String to = parser.getAttributeValue("", "to");
+    XMPPStanzaIQ.Type type = XMPPStanzaIQ.Type.fromString(parser.getAttributeValue("", "type"));
+    XMPPError error = null;
+
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        String elementName = parser.getName();
+        String namespace = parser.getNamespace();
+        if (elementName.equals("error")) {
+          error = parseError(parser);
+        } else if (elementName.equals("bind") && namespace.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
+          iq = parseIQBind(parser);
+          client.onResourceBinded((XMPPStanzaIQBind)iq);
+        } else if (elementName.equals("query") && namespace.equals("jabber:iq:roster")) {
+          //iq = parseRoster(parser);
+        } else if (elementName.equals("query") && namespace.equals("jabber:iq:auth")) {
+          //iq = parseAuthentication(parser);
+        } else if (elementName.equals("query") && namespace.equals("jabber:iq:register")) {
+          //iq = parseRegistration(parser);
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("iq")) {
+          done = true;
+        }
+      }
+    }
+
+    // Check if IQ is not understood. Return error to server if a response is expected.
+    if (iq == null) {
+      if (XMPPStanzaIQ.Type.get == type || XMPPStanzaIQ.Type.set == type) {
+        iq = new XMPPStanzaIQ() {
+          public String getPayloadXML() {return null;}
+        };
+        iq.setId(id);
+        iq.setTo(from); // swap from/to
+        iq.setFrom(to);
+        iq.setType(XMPPStanzaIQ.Type.error);
+        iq.setError(new XMPPError(
+          XMPPError.Type.CANCEL, "feature-not-implemented"));
+        pushStanza(iq);
+        return null;
+      } else {
+        // If an IQ packet wasn't created above, create an empty IQ packet.
+        iq = new XMPPStanzaIQ() {
+          public String getPayloadXML() {return null;}
+        };
+      }
+    }
+
+    // Set basic values on the iq packet.
+    iq.setType(type);
+    iq.setId(id);
+    iq.setFrom(from);
+    iq.setTo(to);
+    iq.setError(error);
+
+    return iq;
+  }
+
+  private static XMPPStanzaIQBind parseIQBind(XmlPullParser parser) throws Exception {
+    XMPPStanzaIQBind bind = new XMPPStanzaIQBind();
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("resource")) {
+          bind.setResource(parser.nextText());
+        } else if (parser.getName().equals("jid")) {
+          bind.setJid(parser.nextText());
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("bind")) {
+          done = true;
+        }
+      }
+    }
+    return bind;
+  }
+
+  private void parseFeatures(XmlPullParser parser) throws Exception {
     boolean compressionReceived = false;
     boolean startTLSReceived = false;
     boolean startTLSRequired = false;
@@ -278,12 +381,12 @@ public class XMPPStream {
         if (parser.getName().equals("starttls")) {
           startTLSReceived = true;
         } else if (parser.getName().equals("mechanisms")) {
-          stream.client.saslSetServerMechanisms(parseMechanisms(parser));
+          client.onReceiveSASLMechanisms(parseMechanisms(parser));
         } else if (parser.getName().equals("compression")) {
           compressionReceived = true;
-          stream.client.notifyCompressionMethods(parseMethods(parser));
+          client.onReceiveCompressionMethods(parseMethods(parser));
         } else if (parser.getName().equals("bind")) {
-          stream.doBind();
+          doBind();
         } else if (parser.getName().equals("session")) {
           // TODO
         } else if (parser.getName().equals("register")) {
@@ -293,14 +396,19 @@ public class XMPPStream {
         if (parser.getName().equals("required") && startTLSReceived) {
           startTLSRequired = true;
         } else if (parser.getName().equals("features")) {
-          if (startTLSReceived && stream.requestStartTLS(startTLSRequired)) {
+          if (startTLSReceived && requestStartTLS(startTLSRequired)) {
             return;
           }
-          if (!stream.client.isAuthed()) {
-            stream.client.notifyReadyToLogin();
+          if (!client.isAuthed()) {
+            // Wait for secure socket
+            if (client.socket.getSecurity() != XMPPSocket.Security.none &&
+                !client.socket.securized) {
+              return;
+            }
+            client.onReadyforAuthentication();
             return;
           }
-          if (compressionReceived && stream.requestCompression()) {
+          if (compressionReceived && requestCompression()) {
             return;
           }
           return;
@@ -309,7 +417,7 @@ public class XMPPStream {
     }
   }
 
-  static List<String> parseMechanisms(XmlPullParser parser) throws Exception {
+  private static List<String> parseMechanisms(XmlPullParser parser) throws Exception {
     List<String> mechanisms = new ArrayList<String>();
     boolean done = false;
     while (!done) {
@@ -328,7 +436,7 @@ public class XMPPStream {
     return mechanisms;
   }
 
-  static List<String> parseMethods(XmlPullParser parser) throws Exception {
+  private static List<String> parseMethods(XmlPullParser parser) throws Exception {
     List<String> methods = new ArrayList<String>();
     boolean done = false;
     while (!done) {
@@ -347,8 +455,73 @@ public class XMPPStream {
     return methods;
   }
 
+  public static XMPPError parseError(XmlPullParser parser) throws Exception {
+    final String errorNamespace = "urn:ietf:params:xml:ns:xmpp-stanzas";
+    XMPPError error = new XMPPError();
+
+    XMPPError.Type type = XMPPError.Type.CANCEL;
+    String by = null;
+    String condition = null;
+    String text = null;
+    String textLang = null;
+
+    // Parse the error header
+    for (int i=0; i<parser.getAttributeCount(); i++) {
+      if (parser.getAttributeName(i).equals("type")) {
+        try {
+          type = XMPPError.Type.valueOf(parser.getAttributeValue("", "type"));
+        } catch (Exception e) {
+        }
+      }
+      if (parser.getAttributeName(i).equals("by")) {
+        by = parser.getAttributeValue("", "by");
+      }
+    }
+
+    boolean done = false;
+    while (!done) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("text")) {
+          textLang = getLanguageAttribute(parser);
+          text = parser.nextText();
+        } else {
+          String elementName = parser.getName();
+          String namespace = parser.getNamespace();
+          if (errorNamespace.equals(namespace)) {
+            condition = elementName;
+          } else {
+            condition = "!" + elementName; // undefined condition
+          }
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("error")) {
+          done = true;
+        }
+      }
+    }
+
+    error.setBy(by);
+    error.setCondition(condition);
+    error.setText(text);
+    error.setTextLang(textLang);
+    error.setType(type);
+    return error;
+  }
+
+  private static String getLanguageAttribute(XmlPullParser parser) {
+    for (int i = 0; i < parser.getAttributeCount(); i++) {
+      String attributeName = parser.getAttributeName(i);
+      if ("xml:lang".equals(attributeName) || ("lang".equals(attributeName) &&
+          "xml".equals(parser.getAttributePrefix(i)))) {
+        return parser.getAttributeValue(i);
+      }
+    }
+    return null;
+  }
+
   // DEBUG METHOD
-  static String repeat(char c, int i) {
+  private static String repeat(char c, int i) {
     String tst = "";
     for(int j = 0; j < i; j++) {
       tst = tst+c;
