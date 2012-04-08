@@ -236,7 +236,7 @@ public class XMPPAuth {
       return getHexString(md.digest(pack.getBytes()));
 
     } catch (NoSuchAlgorithmException e2) {
-      client.onStreamError(new XMPPError(XMPPError.Type.AUTH,
+      client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
         "feature-not-implemented", "No susch algorithm MD5 implemented."));
       return "";
     }
