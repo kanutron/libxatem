@@ -8,16 +8,16 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
 
   // Constructors
   public XMPPStanzaIQBind() {
-    this.setType(Type.set);
+    setType(Type.set);
   }
   public XMPPStanzaIQBind(String j) {
-    this.setType(Type.set);
-    this.setJid(j);
+    setType(Type.set);
+    setJid(j);
   }
   public XMPPStanzaIQBind(String j, String r) {
-    this.setType(Type.set);
-    this.setJid(j);
-    this.setResource(r);
+    setType(Type.set);
+    setJid(j);
+    setResource(r);
   }
 
   // Public methods
@@ -27,7 +27,7 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
 
   public void setResource(String resource) {
     if (resource != null) {
-      this.resource = resource;
+      resource = resource;
     }
   }
 
@@ -37,10 +37,10 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
 
   public void setJid(String j) {
     if (j.indexOf("/")>0) {
-      this.jid = j.substring(0, j.indexOf("/")); // JID part
-      this.resource = j.substring(j.indexOf("/")+1); // Resource part
+      jid = j.substring(0, j.indexOf("/")); // JID part
+      resource = j.substring(j.indexOf("/")+1); // Resource part
     } else {
-      this.jid = j;
+      jid = j;
     }
   }
 
@@ -48,10 +48,10 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     StringBuilder buf = new StringBuilder();
     buf.append("<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">");
     if (resource != null) {
-      buf.append("<resource>").append(this.resource).append("</resource>");
+      buf.append("<resource>").append(resource).append("</resource>");
     }
     if (jid != null) {
-      buf.append("<jid>").append(this.jid).append("</jid>");
+      buf.append("<jid>").append(jid).append("</jid>");
     }
     buf.append("</bind>");
     return buf.toString();
