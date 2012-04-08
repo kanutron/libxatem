@@ -1,9 +1,12 @@
 package com.xetrix.xmpp.client;
 
+import org.xmlpull.v1.XmlPullParser;
+
 public class XMPPError {
   // Class data
-  protected static final String DEFAULT_LANG =
+  private static final String DEFAULT_LANG =
     java.util.Locale.getDefault().getLanguage().toLowerCase();
+  private static final String errorNamespace = "urn:ietf:params:xml:ns:xmpp-stanzas";
 
   // Error data
   private String by = null;
@@ -15,73 +18,76 @@ public class XMPPError {
   // Constructors
   public XMPPError() {}
   public XMPPError(Type t, String c) {
-    this.type = t;
-    this.condition = c;
+    type = t;
+    condition = c;
   }
-  public XMPPError(Type t, String c, String text) {
-    this.type = t;
-    this.condition = c;
-    this.text = text;
+  public XMPPError(Type t, String c, String tx) {
+    type = t;
+    condition = c;
+    text = tx;
+  }
+  public XMPPError(XmlPullParser parser) throws Exception {
+    parse(parser);
   }
 
   // Public methods
   public String getBy() {
-    return this.by;
+    return by;
   }
 
-  public void setBy(String by) {
-    this.by = by;
+  public void setBy(String b) {
+    by = b;
   }
 
   public Type getType() {
-    return this.type;
+    return type;
   }
 
   public void setType(Type t) {
-    this.type = t;
+    type = t;
   }
 
   public String getCondition() {
-    return this.condition;
+    return condition;
   }
 
   public void setCondition(String c) {
-    this.condition = c;
+    condition = c;
   }
 
   public String getText() {
-    return this.text;
+    return text;
   }
 
   public void setText(String t) {
-    this.text = t;
+    text = t;
   }
 
   public String getTextLang() {
-    return this.textLang;
+    return textLang;
   }
 
   public void setTextLang(String l) {
-    this.textLang = l;
+    textLang = l;
   }
 
   public String toXML() {
     StringBuilder buf = new StringBuilder();
-    buf.append("<error type=\"").append(this.getType()).append("\"");
-    if (this.by != null) {
-      buf.append(" by=\"").append(this.by).append("\"");
+    buf.append("<error type=\"").append(getType()).append("\"");
+    if (by != null) {
+      buf.append(" by=\"").append(by).append("\"");
     }
     buf.append(">");
 
-    if (this.condition != null) {
-      buf.append("<").append(this.condition);
+    if (condition != null) {
+      buf.append("<").append(condition);
       buf.append(" xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/>");
     }
 
-    if (this.text != null) {
-      buf.append("<text xml:lang=\"").append(this.textLang);
+    if (text != null) {
+      buf.append("<text xml:lang=\"").append(textLang);
       buf.append("\" xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\">");
-      buf.append(this.text);
+      buf.append(text);
       buf.append("</text>");
     }
 
@@ -91,15 +97,15 @@ public class XMPPError {
 
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(this.getType()).append(": ");
-    if (this.condition != null) {
-      buf.append(this.condition.toUpperCase());
+    buf.append(getType()).append(": ");
+    if (condition != null) {
+      buf.append(condition);
     }
-    if (this.text != null) {
-      buf.append(": ").append(this.text);
+    if (text != null) {
+      buf.append(": ").append(text);
     }
-    if (this.by != null) {
-      buf.append(" (by: ").append(this.by).append(")");
+    if (by != null) {
+      buf.append(" (by: ").append(by).append(")");
     }
     return buf.toString();
   }
@@ -126,4 +132,76 @@ public class XMPPError {
     }
   }
 
+  // Private methods
+  private void parse(XmlPullParser parser) throws Exception {
+    if (!"error".equals(parser.getName())) {
+      if ("failure".equals(parser.getName())) {
+        parseFailureAsError(parser);
+      }
+      return;
+    }
+
+    // Parse the error header
+    for (int i=0; i<parser.getAttributeCount(); i++) {
+      if (parser.getAttributeName(i).equals("type")) {
+        try {
+          type = Type.valueOf(parser.getAttributeValue("", "type"));
+        } catch (Exception e) {
+        }
+      }
+      if (parser.getAttributeName(i).equals("by")) {
+        by = parser.getAttributeValue("", "by");
+      }
+    }
+
+    while (true) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("text")) {
+          textLang = XMPPStream.getLanguageAttribute(parser);
+          text = parser.nextText();
+        } else {
+          String elementName = parser.getName();
+          String namespace = parser.getNamespace();
+          if (errorNamespace.equals(namespace)) {
+            condition = elementName;
+          } else {
+            condition = namespace + ":" + elementName;
+          }
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("error")) {
+          return;
+        }
+      }
+    }
+  }
+
+  private void parseFailureAsError(XmlPullParser parser) throws Exception {
+    if (!"failure".equals(parser.getName())) {
+      return;
+    }
+
+    String namespace = parser.getNamespace(null);
+    if ("urn:ietf:params:xml:ns:xmpp-tls".equals(namespace)) {
+      text = "TLS failure.";
+    } else if ("http://jabber.org/protocol/compress".equals(namespace)) {
+      text = "Compression failure.";
+    } else if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(namespace)) {
+      text = "Authentication failure.";
+    } else {
+      text = "Unknown failure.";
+    }
+
+    while (true) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        condition = parser.getName();
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("failure")) {
+          return;
+        }
+      }
+    }
+  }
 }
