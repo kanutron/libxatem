@@ -24,51 +24,51 @@ public abstract class XMPPStanza {
   }
 
   public String getXmlns() {
-    return this.xmlns;
+    return xmlns;
   }
 
   public void setXmlns(String ns) {
-    this.xmlns = ns;
+    xmlns = ns;
   }
 
   public String getId() {
-    return this.id;
+    return id;
   }
 
   public void setId(String i) {
-    this.id = i;
+    id = i;
   }
 
   public String getTo() {
-    return this.to;
+    return to;
   }
 
   public void setTo(String to) {
-    this.to = to;
+    to = to;
   }
 
   public String getFrom() {
-    return this.from;
+    return from;
   }
 
   public void setFrom(String from) {
-    this.from = from;
+    from = from;
   }
 
   public String getLang() {
-    return this.lang;
+    return lang;
   }
 
   public void setLang(String lang) {
-    this.lang = lang;
+    lang = lang;
   }
 
   public XMPPError getError() {
-    return this.error;
+    return error;
   }
 
   public void setError(XMPPError e) {
-    this.error = e;
+    error = e;
   }
 
   public abstract String toXML();
