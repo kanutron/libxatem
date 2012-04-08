@@ -10,37 +10,37 @@ public abstract class XMPPStanzaIQ extends XMPPStanza {
   // Constructors
   public XMPPStanzaIQ() {}
   public XMPPStanzaIQ(Type t) {
-    this.type = t;
+    type = t;
   }
   public XMPPStanzaIQ(String id, XMPPError e) {
-    this.setId(id);
-    this.setError(e);
-    this.type = Type.error;
+    setId(id);
+    setError(e);
+    type = Type.error;
   }
 
   // Public methods
   public Type getType() {
-    return this.type;
+    return type;
   }
 
   public void setType(Type t) {
     if (t != null) {
-      this.type = t;
+      type = t;
     }
   }
 
   public String toXML() {
     StringBuilder buf = new StringBuilder();
     buf.append("<iq ");
-    buf.append("type=\"").append(this.type).append("\"");
-    if (this.getId() != null) {
-      buf.append(" id=\"" + this.getId() + "\"");
+    buf.append("type=\"").append(type).append("\"");
+    if (getId() != null) {
+      buf.append(" id=\"" + getId() + "\"");
     }
-    if (this.getTo() != null) {
-      buf.append(" to=\"").append(StringUtils.escapeForXML(this.getTo())).append("\"");
+    if (getTo() != null) {
+      buf.append(" to=\"").append(StringUtils.escapeForXML(getTo())).append("\"");
     }
-    if (this.getFrom() != null) {
-      buf.append(" from=\"").append(StringUtils.escapeForXML(this.getFrom())).append("\"");
+    if (getFrom() != null) {
+      buf.append(" from=\"").append(StringUtils.escapeForXML(getFrom())).append("\"");
     }
     buf.append(">");
 
@@ -51,9 +51,9 @@ public abstract class XMPPStanzaIQ extends XMPPStanza {
     }
 
     // Add the error sub-packet, if there is one.
-    if (this.type == Type.error &&
-        this.getError() != null) {
-      buf.append(this.getError().toXML());
+    if (type == Type.error &&
+        getError() != null) {
+      buf.append(getError().toXML());
     }
 
     buf.append("</iq>");
