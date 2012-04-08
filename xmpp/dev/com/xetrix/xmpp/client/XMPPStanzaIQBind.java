@@ -1,5 +1,7 @@
 package com.xetrix.xmpp.client;
 
+import org.xmlpull.v1.XmlPullParser;
+
 public class XMPPStanzaIQBind extends XMPPStanzaIQ {
 
   // Bind data
@@ -18,6 +20,9 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     setType(Type.set);
     setJid(j);
     setResource(r);
+  }
+  public XMPPStanzaIQBind(XmlPullParser parser) throws Exception {
+    parse(parser);
   }
 
   // Public methods
@@ -56,4 +61,26 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     buf.append("</bind>");
     return buf.toString();
   }
+
+  // Private mehtods
+  private void parse(XmlPullParser parser) throws Exception {
+    if (!"bind".equals(parser.getName())) {
+      return;
+    }
+    while (true) {
+      int eventType = parser.next();
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("resource")) {
+          setResource(parser.nextText());
+        } else if (parser.getName().equals("jid")) {
+          setJid(parser.nextText());
+        }
+      } else if (eventType == XmlPullParser.END_TAG) {
+        if (parser.getName().equals("bind")) {
+          return;
+        }
+      }
+    }
+  }
+
 }

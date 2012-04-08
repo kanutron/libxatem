@@ -302,7 +302,7 @@ public class XMPPStream {
         if (elementName.equals("error")) {
           error = parseError(parser);
         } else if (elementName.equals("bind") && namespace.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
-          iq = parseIQBind(parser);
+          iq = new XMPPStanzaIQBind(parser);
           client.onResourceBinded((XMPPStanzaIQBind)iq);
         } else if (elementName.equals("query") && namespace.equals("jabber:iq:roster")) {
           //iq = parseRoster(parser);
@@ -348,26 +348,6 @@ public class XMPPStream {
     iq.setError(error);
 
     return iq;
-  }
-
-  private static XMPPStanzaIQBind parseIQBind(XmlPullParser parser) throws Exception {
-    XMPPStanzaIQBind bind = new XMPPStanzaIQBind();
-    boolean done = false;
-    while (!done) {
-      int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        if (parser.getName().equals("resource")) {
-          bind.setResource(parser.nextText());
-        } else if (parser.getName().equals("jid")) {
-          bind.setJid(parser.nextText());
-        }
-      } else if (eventType == XmlPullParser.END_TAG) {
-        if (parser.getName().equals("bind")) {
-          done = true;
-        }
-      }
-    }
-    return bind;
   }
 
   private void parseFeatures(XmlPullParser parser) throws Exception {
