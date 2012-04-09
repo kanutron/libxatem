@@ -18,13 +18,13 @@ public class XMPPError {
   // Constructors
   public XMPPError() {}
   public XMPPError(Type t, String c) {
-    type = t;
-    condition = c;
+    setType(t);
+    setCondition(c);
   }
   public XMPPError(Type t, String c, String tx) {
-    type = t;
-    condition = c;
-    text = tx;
+    setType(t);
+    setCondition(c);
+    setText(tx);
   }
   public XMPPError(XmlPullParser parser) throws Exception {
     parse(parser);
@@ -44,7 +44,9 @@ public class XMPPError {
   }
 
   public void setType(Type t) {
-    type = t;
+    if (t != null) {
+      type = t;
+    }
   }
 
   public String getCondition() {
@@ -68,7 +70,9 @@ public class XMPPError {
   }
 
   public void setTextLang(String l) {
-    textLang = l;
+    if (l != null) {
+      textLang = l;
+    }
   }
 
   public String toXML() {
@@ -145,12 +149,12 @@ public class XMPPError {
     for (int i=0; i<parser.getAttributeCount(); i++) {
       if (parser.getAttributeName(i).equals("type")) {
         try {
-          type = Type.valueOf(parser.getAttributeValue("", "type"));
+          setType(Type.valueOf(parser.getAttributeValue(null, "type")));
         } catch (Exception e) {
         }
       }
       if (parser.getAttributeName(i).equals("by")) {
-        by = parser.getAttributeValue("", "by");
+        setBy(parser.getAttributeValue(null, "by"));
       }
     }
 
@@ -158,15 +162,15 @@ public class XMPPError {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
         if (parser.getName().equals("text")) {
-          textLang = XMPPStanza.getLanguageAttribute(parser);
-          text = parser.nextText();
+          setTextLang(XMPPStanza.getLanguageAttribute(parser));
+          setText(parser.nextText());
         } else {
           String elementName = parser.getName();
           String namespace = parser.getNamespace();
           if (errorNamespace.equals(namespace)) {
-            condition = elementName;
+            setCondition(elementName);
           } else {
-            condition = namespace + ":" + elementName;
+            setCondition(namespace + ":" + elementName);
           }
         }
       } else if (eventType == XmlPullParser.END_TAG) {
@@ -196,7 +200,7 @@ public class XMPPError {
     while (true) {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
-        condition = parser.getName();
+        setCondition(parser.getName());
       } else if (eventType == XmlPullParser.END_TAG) {
         if (parser.getName().equals("failure")) {
           return;
