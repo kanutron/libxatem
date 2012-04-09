@@ -191,7 +191,7 @@ public class XMPPStream {
     try {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
-        Log.write("<<< " + stanza , 7); // DEBUG
+        Log.write("S: " + stanza , 7); // DEBUG
         client.socket.writer.write(stanza);
         client.socket.writer.flush();
       }
@@ -208,8 +208,6 @@ public class XMPPStream {
       int eventType = parser.getEventType();
       do {
         if (eventType == XmlPullParser.START_TAG) {
-          Log.write(">>> " + repeat(' ', parser.getDepth()) + "<" + parser.getName() + ">", 7); // DEBUG
-
           if (parser.getName().equals("presence")) {
             // TODO:
           } else if (parser.getName().equals("iq")) {
@@ -306,7 +304,7 @@ public class XMPPStream {
       return;
     } else {
       // TODO: Unhandled ERROR or RESULT IQ received.
-      Log.write("!!! " + repeat(' ', parser.getDepth()) + iq.toXML(), 4); // DEBUG
+      Log.write("R: " + repeat(' ', parser.getDepth()) + iq.toXML(), 4); // DEBUG
     }
 
     return;
