@@ -283,17 +283,6 @@ public class XMPPStream {
         } else if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
           iq = new XMPPStanzaIQBind(parser, iq);
           client.onResourceBinded((XMPPStanzaIQBind)iq);
-
-          // DEBUG
-          XMPPStanzaIQ tiq = new XMPPStanzaIQ() {
-            public String getPayloadXML() {
-              return "<query xmlns=\"jabber:iq:roster\"></query>";
-            }
-          };
-          tiq.setFrom(client.getFullJid());
-          pushStanza(tiq);
-          //pushStanza("<presence></presence>");
-
           return;
         } else if (e.equals("query") && n.equals("jabber:iq:roster")) {
           //iq = parseRoster(parser);
