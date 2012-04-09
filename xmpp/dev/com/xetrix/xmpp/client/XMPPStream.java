@@ -153,17 +153,6 @@ public class XMPPStream {
     pushStanza(bind);
   }
 
-  static String getLanguageAttribute(XmlPullParser parser) {
-    for (int i = 0; i < parser.getAttributeCount(); i++) {
-      String attributeName = parser.getAttributeName(i);
-      if ("xml:lang".equals(attributeName) || ("lang".equals(attributeName) &&
-          "xml".equals(parser.getAttributePrefix(i)))) {
-        return parser.getAttributeValue(i);
-      }
-    }
-    return null;
-  }
-
   // Private methods
   private void initParser() {
     parserDone = false;
@@ -281,7 +270,7 @@ public class XMPPStream {
 
   private XMPPStanzaIQ parseIQ(XmlPullParser parser) throws Exception {
     XMPPStanzaIQ iq = null;
-    String lang = getLanguageAttribute(parser);
+    String lang = XMPPStanza.getLanguageAttribute(parser);
     String from = parser.getAttributeValue("", "from");
     String id = parser.getAttributeValue("", "id");
     String to = parser.getAttributeValue("", "to");
