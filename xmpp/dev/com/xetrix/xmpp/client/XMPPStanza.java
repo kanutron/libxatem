@@ -1,5 +1,7 @@
 package com.xetrix.xmpp.client;
 
+import org.xmlpull.v1.XmlPullParser;
+
 public abstract class XMPPStanza {
 
   // Class data
@@ -9,8 +11,8 @@ public abstract class XMPPStanza {
 
   // Common Stanza data
   private String     xmlns = DEFAULT_XMLNS;
-  private String     from = null;
   private String     id = null;
+  private String     from = null;
   private String     to = null;
   private String     lang = DEFAULT_LANG;
   private XMPPError  error = null;
@@ -71,6 +73,34 @@ public abstract class XMPPStanza {
     error = e;
   }
 
+  public static void parse(XmlPullParser parser, XMPPStanza stanza) throws Exception {
+    if (!"presence".equals(parser.getName()) &&
+        !"message".equals(parser.getName()) &&
+        !"iq".equals(parser.getName())) {
+      return;
+    }
+
+    stanza.setId(parser.getAttributeValue(null, "id"));
+    stanza.setFrom(parser.getAttributeValue(null, "from"));
+    stanza.setTo(parser.getAttributeValue(null, "to"));
+    stanza.setLang(getLanguageAttribute(parser));
+    if (parser.getNamespace(null) != null) {
+      stanza.setXmlns(parser.getNamespace(null));
+    }
+  }
+
+  public static String getLanguageAttribute(XmlPullParser parser) {
+    for (int i = 0; i < parser.getAttributeCount(); i++) {
+      String attributeName = parser.getAttributeName(i);
+      if ("xml:lang".equals(attributeName) || ("lang".equals(attributeName) &&
+          "xml".equals(parser.getAttributePrefix(i)))) {
+        return parser.getAttributeValue(i);
+      }
+    }
+    return null;
+  }
+
   public abstract String toXML();
+
 
 }
