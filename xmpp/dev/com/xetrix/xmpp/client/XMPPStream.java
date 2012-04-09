@@ -19,7 +19,6 @@ public class XMPPStream {
 
   // XML Parser
   private XmlPullParser parser;
-  private boolean parserDone = false;
 
   // Stream Threads
   private Thread readThread;
@@ -76,7 +75,6 @@ public class XMPPStream {
   }
 
   void finishStream() {
-    parserDone = true;
     readThread.interrupt();
     readThread = new Thread();
     writeThread.interrupt();
@@ -155,7 +153,6 @@ public class XMPPStream {
 
   // Private methods
   private void initParser() {
-    parserDone = false;
     try {
       parser = new MXParser();
       parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
@@ -259,7 +256,7 @@ public class XMPPStream {
           }
         }
         eventType = parser.next();
-      } while (!parserDone && eventType != XmlPullParser.END_DOCUMENT && thread == readThread);
+      } while (eventType != XmlPullParser.END_DOCUMENT && thread == readThread);
     } catch (Exception e) {
       client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
         "gone", "Error parsing input stream."));
