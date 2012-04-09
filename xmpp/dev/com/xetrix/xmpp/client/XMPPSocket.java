@@ -105,8 +105,8 @@ public class XMPPSocket {
       // TODO: Verify server certs.
       SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
       Socket plain = socket;
-      socket = socketFactory.createSocket(plain, plain.getInetAddress().getHostName(),
-                                               plain.getPort(), true);
+      socket = socketFactory.createSocket(
+        plain, plain.getInetAddress().getHostName(), plain.getPort(), true);
       ((SSLSocket) socket).addHandshakeCompletedListener(new HSListener());
       socket.setSoTimeout(0);
       socket.setKeepAlive(true);
