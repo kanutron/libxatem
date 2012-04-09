@@ -213,7 +213,7 @@ public class XMPPStream {
           if (parser.getName().equals("presence")) {
             // TODO:
           } else if (parser.getName().equals("iq")) {
-            XMPPStanzaIQ iq = parseIQ(parser);
+            parseIQ(parser);
           } else if (parser.getName().equals("message")) {
             // TODO
           } else if (parser.getName().equals("features")) {
@@ -268,31 +268,38 @@ public class XMPPStream {
     }
   }
 
-  private XMPPStanzaIQ parseIQ(XmlPullParser parser) throws Exception {
-    XMPPStanzaIQ iq = null;
-    String lang = XMPPStanza.getLanguageAttribute(parser);
-    String from = parser.getAttributeValue("", "from");
-    String id = parser.getAttributeValue("", "id");
-    String to = parser.getAttributeValue("", "to");
-    XMPPStanzaIQ.Type type = XMPPStanzaIQ.Type.fromString(parser.getAttributeValue("", "type"));
-    XMPPError error = null;
+  private void parseIQ(XmlPullParser parser) throws Exception {
+    XMPPStanzaIQ iq = new XMPPStanzaIQ(parser);
 
     boolean done = false;
     while (!done) {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
-        String elementName = parser.getName();
-        String namespace = parser.getNamespace();
-        if (elementName.equals("error")) {
-          error = new XMPPError(parser);
-        } else if (elementName.equals("bind") && namespace.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
-          iq = new XMPPStanzaIQBind(parser);
+        String e = parser.getName();
+        String n = parser.getNamespace();
+
+        if (e.equals("error")) {
+          iq.setError(new XMPPError(parser));
+        } else if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
+          iq = new XMPPStanzaIQBind(parser, iq);
           client.onResourceBinded((XMPPStanzaIQBind)iq);
-        } else if (elementName.equals("query") && namespace.equals("jabber:iq:roster")) {
+
+          // DEBUG
+          XMPPStanzaIQ tiq = new XMPPStanzaIQ() {
+            public String getPayloadXML() {
+              return "<query xmlns=\"jabber:iq:roster\"></query>";
+            }
+          };
+          tiq.setFrom(client.getFullJid());
+          pushStanza(tiq);
+          //pushStanza("<presence></presence>");
+
+          return;
+        } else if (e.equals("query") && n.equals("jabber:iq:roster")) {
           //iq = parseRoster(parser);
-        } else if (elementName.equals("query") && namespace.equals("jabber:iq:auth")) {
+        } else if (e.equals("query") && n.equals("jabber:iq:auth")) {
           //iq = parseAuthentication(parser);
-        } else if (elementName.equals("query") && namespace.equals("jabber:iq:register")) {
+        } else if (e.equals("query") && n.equals("jabber:iq:register")) {
           //iq = parseRegistration(parser);
         }
       } else if (eventType == XmlPullParser.END_TAG) {
@@ -302,36 +309,18 @@ public class XMPPStream {
       }
     }
 
-    // Check if IQ is not understood. Return error to server if a response is expected.
-    if (iq == null) {
-      if (XMPPStanzaIQ.Type.get == type || XMPPStanzaIQ.Type.set == type) {
-        iq = new XMPPStanzaIQ() {
-          public String getPayloadXML() {return null;}
-        };
-        iq.setId(id);
-        iq.setTo(from); // swap from/to
-        iq.setFrom(to);
-        iq.setType(XMPPStanzaIQ.Type.error);
-        iq.setError(new XMPPError(
-          XMPPError.Type.CANCEL, "feature-not-implemented"));
-        pushStanza(iq);
-        return null;
-      } else {
-        // If an IQ packet wasn't created above, create an empty IQ packet.
-        iq = new XMPPStanzaIQ() {
-          public String getPayloadXML() {return null;}
-        };
-      }
+    // If here, the IQ was unhandled.
+    if (iq.getType() == XMPPStanzaIQ.Type.get || iq.getType() == XMPPStanzaIQ.Type.set) {
+      XMPPStanzaIQ eiq = iq.toErrorIQ(
+        new XMPPError(XMPPError.Type.CANCEL, "feature-not-implemented"));
+      pushStanza(eiq);
+      return;
+    } else {
+      // TODO: Unhandled ERROR or RESULT IQ received.
+      Log.write("!!! " + repeat(' ', parser.getDepth()) + iq.toXML(), 4); // DEBUG
     }
 
-    // Set basic values on the iq packet.
-    iq.setType(type);
-    iq.setId(id);
-    iq.setFrom(from);
-    iq.setTo(to);
-    iq.setError(error);
-
-    return iq;
+    return;
   }
 
   private void parseFeatures(XmlPullParser parser) throws Exception {
