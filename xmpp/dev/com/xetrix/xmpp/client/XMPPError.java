@@ -158,7 +158,7 @@ public class XMPPError {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
         if (parser.getName().equals("text")) {
-          textLang = XMPPStream.getLanguageAttribute(parser);
+          textLang = XMPPStanza.getLanguageAttribute(parser);
           text = parser.nextText();
         } else {
           String elementName = parser.getName();
