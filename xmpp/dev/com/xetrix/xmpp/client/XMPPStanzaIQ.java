@@ -1,21 +1,21 @@
 package com.xetrix.xmpp.client;
 
-public abstract class XMPPStanzaIQ extends XMPPStanza {
+import org.xmlpull.v1.XmlPullParser;
 
-  // Class data
+public class XMPPStanzaIQ extends XMPPStanza {
 
   // IQ Stanza data
   private Type type = Type.get;
 
   // Constructors
   public XMPPStanzaIQ() {}
-  public XMPPStanzaIQ(Type t) {
-    type = t;
+  public XMPPStanzaIQ(XMPPStanzaIQ iq) throws Exception {
+    super(iq);
+    setType(iq.getType());
   }
-  public XMPPStanzaIQ(String id, XMPPError e) {
-    setId(id);
-    setError(e);
-    type = Type.error;
+  public XMPPStanzaIQ(XmlPullParser parser) throws Exception {
+    parseStanza(parser);
+    parseStanzaIQ(parser);
   }
 
   // Public methods
@@ -26,6 +26,14 @@ public abstract class XMPPStanzaIQ extends XMPPStanza {
   public void setType(Type t) {
     if (t != null) {
       type = t;
+    }
+  }
+  public void setType(String t) {
+    try {
+      if (t != null) {
+        setType(Type.fromString(t));
+      }
+    } catch (Exception e) {
     }
   }
 
@@ -60,7 +68,26 @@ public abstract class XMPPStanzaIQ extends XMPPStanza {
     return buf.toString();
   }
 
-  public abstract String getPayloadXML();
+  public XMPPStanzaIQ toErrorIQ(XMPPError e) throws Exception {
+    XMPPStanzaIQ iq = new XMPPStanzaIQ(this);
+    iq.setFrom(getTo());
+    iq.setTo(getFrom());
+    iq.setType(Type.error);
+    iq.setError(e);
+    return iq;
+  }
+
+  public String getPayloadXML() {
+    return null;
+  }
+
+  public final void parseStanzaIQ(XmlPullParser parser) throws Exception {
+    if (!"iq".equals(parser.getName())) {
+      return;
+    }
+
+    setType(parser.getAttributeValue(null, "type"));
+  }
 
   // Enums
   public enum Type {
@@ -82,4 +109,5 @@ public abstract class XMPPStanzaIQ extends XMPPStanza {
       return super.toString();
     }
   }
+
 }
