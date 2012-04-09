@@ -19,6 +19,17 @@ public abstract class XMPPStanza {
 
   // Constructors
   public XMPPStanza() {}
+  public XMPPStanza(XmlPullParser parser) throws Exception {
+    parseStanza(parser);
+  }
+  public XMPPStanza(XMPPStanza stanza) {
+    setXmlns(stanza.getXmlns());
+    setId(stanza.getId());
+    setFrom(stanza.getFrom());
+    setTo(stanza.getTo());
+    setLang(stanza.getLang());
+    setError(stanza.getError());
+  }
 
   // Public methods
   public static String getDefaultLanguage() {
@@ -30,7 +41,9 @@ public abstract class XMPPStanza {
   }
 
   public void setXmlns(String ns) {
-    xmlns = ns;
+    if (ns != null) {
+      xmlns = ns;
+    }
   }
 
   public String getId() {
@@ -45,24 +58,26 @@ public abstract class XMPPStanza {
     return to;
   }
 
-  public void setTo(String to) {
-    to = to;
+  public void setTo(String t) {
+    to = t;
   }
 
   public String getFrom() {
     return from;
   }
 
-  public void setFrom(String from) {
-    from = from;
+  public void setFrom(String f) {
+    from = f;
   }
 
   public String getLang() {
     return lang;
   }
 
-  public void setLang(String lang) {
-    lang = lang;
+  public void setLang(String l) {
+    if (l != null) {
+      lang = l;
+    }
   }
 
   public XMPPError getError() {
@@ -71,22 +86,6 @@ public abstract class XMPPStanza {
 
   public void setError(XMPPError e) {
     error = e;
-  }
-
-  public static void parse(XmlPullParser parser, XMPPStanza stanza) throws Exception {
-    if (!"presence".equals(parser.getName()) &&
-        !"message".equals(parser.getName()) &&
-        !"iq".equals(parser.getName())) {
-      return;
-    }
-
-    stanza.setId(parser.getAttributeValue(null, "id"));
-    stanza.setFrom(parser.getAttributeValue(null, "from"));
-    stanza.setTo(parser.getAttributeValue(null, "to"));
-    stanza.setLang(getLanguageAttribute(parser));
-    if (parser.getNamespace(null) != null) {
-      stanza.setXmlns(parser.getNamespace(null));
-    }
   }
 
   public static String getLanguageAttribute(XmlPullParser parser) {
@@ -100,7 +99,22 @@ public abstract class XMPPStanza {
     return null;
   }
 
-  public abstract String toXML();
+  public final void parseStanza(XmlPullParser parser) throws Exception {
+    if (!"presence".equals(parser.getName()) &&
+        !"message".equals(parser.getName()) &&
+        !"iq".equals(parser.getName())) {
+      return;
+    }
 
+    setId(parser.getAttributeValue(null, "id"));
+    setFrom(parser.getAttributeValue(null, "from"));
+    setTo(parser.getAttributeValue(null, "to"));
+    setLang(getLanguageAttribute(parser));
+    if (parser.getNamespace(null) != null) {
+      setXmlns(parser.getNamespace(null));
+    }
+  }
+
+  public abstract String toXML();
 
 }
