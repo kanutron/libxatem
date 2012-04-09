@@ -21,8 +21,9 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     setJid(j);
     setResource(r);
   }
-  public XMPPStanzaIQBind(XmlPullParser parser) throws Exception {
-    parse(parser);
+  public XMPPStanzaIQBind(XmlPullParser parser, XMPPStanzaIQ iq) throws Exception {
+    super(iq);
+    parseStanzaIQBind(parser);
   }
 
   // Public methods
@@ -63,7 +64,7 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
   }
 
   // Private mehtods
-  private void parse(XmlPullParser parser) throws Exception {
+  public final void parseStanzaIQBind(XmlPullParser parser) throws Exception {
     if (!"bind".equals(parser.getName())) {
       return;
     }
