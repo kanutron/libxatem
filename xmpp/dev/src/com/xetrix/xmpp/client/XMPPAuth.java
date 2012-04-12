@@ -9,6 +9,8 @@ import java.util.Random;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import com.xetrix.xmpp.util.Base64;
+
 public class XMPPAuth {
   private XMPPClient client;
   private static List<String> clientMechs = new ArrayList<String>();

@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.util;
 
 public class Base64 {
   private static final String systemLineSeparator = System.getProperty("line.separator");

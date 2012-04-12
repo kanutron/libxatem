@@ -1,11 +1,11 @@
-package com.xetrix.xmpp;
+package com.xetrix;
 
 import java.io.Console;
 
 import com.xetrix.xmpp.client.XMPPClient;
 import com.xetrix.xmpp.client.XMPPClientListener;
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.client.XMPPStanzaIQBind;
+import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
 import com.xetrix.xmpp.util.Log;
 

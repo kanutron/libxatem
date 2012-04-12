@@ -1,6 +1,7 @@
 package com.xetrix.xmpp.client;
 
 import java.util.List;
+import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
 public abstract class XMPPClientListener {
   // Constructors

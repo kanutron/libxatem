@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.util;
 
 public class StringUtils {
   private static final char[] QUOTE_ENCODE = "&quot;".toCharArray();

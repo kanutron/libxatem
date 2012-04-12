@@ -2,6 +2,8 @@ package com.xetrix.xmpp.client;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import com.xetrix.xmpp.stanza.XMPPStanza;
+
 public class XMPPError {
   // Class data
   private static final String DEFAULT_LANG =

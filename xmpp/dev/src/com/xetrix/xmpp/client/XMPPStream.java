@@ -8,6 +8,10 @@ import java.util.concurrent.BlockingQueue;
 import org.xmlpull.mxp1.MXParser;
 import org.xmlpull.v1.XmlPullParser;
 
+import com.xetrix.xmpp.stanza.XMPPStanza;
+import com.xetrix.xmpp.stanza.XMPPStanzaIQ;
+import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
+
 import com.xetrix.xmpp.util.Log; // DUBG
 
 public class XMPPStream {

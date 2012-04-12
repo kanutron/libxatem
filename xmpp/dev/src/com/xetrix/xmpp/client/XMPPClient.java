@@ -3,6 +3,8 @@ package com.xetrix.xmpp.client;
 import java.util.List;
 import java.io.IOException;
 
+import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
+
 public class XMPPClient {
   private static final String    CLIENT_NAME = "xatem";
 

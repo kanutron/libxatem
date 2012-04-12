@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.stanza;
 
 import org.xmlpull.v1.XmlPullParser;
 
