@@ -1,0 +1,39 @@
+<project name="XatemTester" default="dist" basedir=".">
+  <description>
+    Xatem Tester
+  </description>
+
+  <!-- set global properties for this build -->
+  <property name="jarname" value="XatemTester"/>
+  <property name="src" location="src"/>
+  <property name="tmp" location="tmp"/>
+  <property name="bin" location="bin"/>
+
+  <path id="project.class.path">
+    <fileset dir="lib">
+      <include name="**/*.jar"/>
+    </fileset>
+    <pathelement path="${java.class.path}/"/>
+  </path>
+
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${tmp}"/>
+    <mkdir dir="${bin}"/>
+  </target>
+
+  <target name="compile" depends="init" description="Compile the source">
+    <javac srcdir="${src}" destdir="${tmp}" classpathref="project.class.path"/>
+  </target>
+
+  <target name="dist" depends="compile" description="Generate the distribution" >
+    <mkdir dir="${bin}"/>
+    <jar jarfile="${bin}/${jarname}-${DSTAMP}.jar" basedir="${tmp}"/>
+  </target>
+
+  <target name="clean" description="clean up" >
+    <delete dir="${tmp}"/>
+    <delete dir="${bin}"/>
+  </target>
+
+</project>
