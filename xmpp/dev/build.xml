@@ -6,11 +6,12 @@
   <!-- set global properties for this build -->
   <property name="jarname" value="XatemTester"/>
   <property name="src" location="src"/>
+  <property name="lib" location="lib"/>
   <property name="tmp" location="tmp"/>
   <property name="bin" location="bin"/>
 
   <path id="project.class.path">
-    <fileset dir="lib">
+    <fileset dir="${lib}">
       <include name="**/*.jar"/>
     </fileset>
     <pathelement path="${java.class.path}/"/>
@@ -28,8 +29,17 @@
 
   <target name="dist" depends="compile" description="Generate the distribution" >
     <mkdir dir="${bin}"/>
-    <jar jarfile="${bin}/${jarname}-${DSTAMP}.jar" basedir="${tmp}"/>
+    <jar jarfile="${bin}/${jarname}-${DSTAMP}.jar" basedir="${tmp}">
+      <manifest>
+        <attribute name="Main-Class" value="com.xetrix.XatemTester"/>
+      </manifest>
+      <zipfileset includes="**/*.class" src="${lib}/xpp.jar"/>
+      <zipfileset includes="**/*.class" src="${lib}/jzlib.jar"/>
+      <zipfileset includes="**/*.class" src="${lib}/jargs.jar"/>
+    </jar>
   </target>
+
+<!--java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 2-->
 
   <target name="clean" description="clean up" >
     <delete dir="${tmp}"/>
