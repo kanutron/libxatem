@@ -36,8 +36,7 @@
     <javac srcdir="${src}" destdir="${tmp}" classpathref="project.class.path" includeantruntime="false" />
   </target>
 
-  <target name="dist" depends="compile" description="Generate the distribution" >
-    <mkdir dir="${bin}"/>
+  <target name="dist" depends="compile" description="Generate the distribution">
     <jar jarfile="${bin}/${testername}-${DSTAMP}.jar" basedir="${tmp}">
       <manifest>
         <attribute name="Main-Class" value="com.xetrix.XatemTest"/>
@@ -48,10 +47,11 @@
     </jar>
   </target>
 
-  <target name="doc">
+  <target name="doc" description="Generate documentation">
     <delete dir="${doc}"/>
     <mkdir dir="${doc}"/>
     <javadoc packagenames="${doc_pkgs}"
+             classpathref="project.class.path"
              public="yes"
              sourcepath="${src}"
              destdir="${doc}"
@@ -61,13 +61,22 @@
              windowtitle="${xmppname}"
              doctitle="${xmppname}"
              bottom="${xmppname}"
-             stylesheetfile="${doc}/javadoc_stylesheet.css"
-    />
+             stylesheetfile="${doc}/javadoc_stylesheet.css"/>
+  </target>
+
+  <target name="test" depends="dist" description="Launch the JAR">
+    <java jar="${bin}/${testername}-${DSTAMP}.jar" fork="true">
+      <arg value="jmroca@xetrix.com"/>
+      <arg value="dev"/>
+      <arg value="talk.google.com"/>
+      <arg value="5222"/>
+      <arg value="2"/>
+    </java>
   </target>
 
 <!--java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 2-->
 
-  <target name="clean" description="clean up" >
+  <target name="clean" description="Clean up" >
     <delete dir="${tmp}"/>
     <delete dir="${bin}"/>
     <delete dir="${doc}"/>
