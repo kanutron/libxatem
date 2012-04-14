@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.util;
+package com.xetrix;
 
 public class Log {
   private static final String             ESC_NORMAL = (char)27 + "[0m";
@@ -23,28 +23,31 @@ public class Log {
   }
 
   private static String buildPrefix(Integer l) {
-    Long   t = (System.currentTimeMillis() - timeZero);
+    Long   time = (System.currentTimeMillis() - timeZero);
     String c = colorByLevel(l);
     String r = ESC_NORMAL;
+    String t = time.toString();
+    String s = "          ".substring(10 + (t.length()-10));
+
     switch (l) {
       case 0:
-        return c + "ECY" + r + " [" + t.toString() + "] ";
+        return c + "ECY" + r + " [" + t + "] " + s;
       case 1:
-        return c + "ALT" + r + " [" + t.toString() + "] ";
+        return c + "ALT" + r + " [" + t + "] " + s;
       case 2:
-        return c + "CRT" + r + " [" + t.toString() + "] ";
+        return c + "CRT" + r + " [" + t + "] " + s;
       case 3:
-        return c + "ERR" + r + " [" + t.toString() + "] ";
+        return c + "ERR" + r + " [" + t + "] " + s;
       case 4:
-        return c + "DGR" + r + " [" + t.toString() + "] ";
+        return c + "DGR" + r + " [" + t + "] " + s;
       case 5:
-        return c + "WRN" + r + " [" + t.toString() + "] ";
+        return c + "WRN" + r + " [" + t + "] " + s;
       case 6:
-        return c + "INF" + r + " [" + t.toString() + "] ";
+        return c + "INF" + r + " [" + t + "] " + s;
       case 7:
-        return c + "DBG" + r + " [" + t.toString() + "] ";
+        return c + "DBG" + r + " [" + t + "] " + s;
     }
-    return c + ">>>" + r + " [" + t.toString() + "] ";
+    return c + ">>>" + r + " [" + t + "] " + s;
   }
 
   private static String buildSuffix(Integer l) {

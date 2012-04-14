@@ -9,8 +9,6 @@ import com.xetrix.xmpp.client.XMPPClientListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
-import com.xetrix.xmpp.util.Log;
-
 public class XatemTest {
   // Constants
   private static final String    PROG_NAME = "XAT'EM Tester - A Jabber client by XETRIX";
