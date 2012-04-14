@@ -3,24 +3,30 @@
     Xatem Tester
   </description>
 
-  <!-- set global properties for this build -->
-  <property name="testername" value="XatemTest"/>
   <property name="xmppname" value="XatemXMPP"/>
   <property name="xmpplibname" value="xmpp"/>
+  <property name="testername" value="XatemTest"/>
 
-  <property name="src" location="src"/>
-  <property name="lib" location="lib"/>
-  <property name="tmp" location="tmp"/>
-  <property name="bin" location="bin"/>
-  <property name="doc" location="doc"/>
+  <property name="src"  location="src"/>
+  <property name="lib"  location="lib"/>
+  <property name="tmp"  location="tmp"/>
+  <property name="bin"  location="bin"/>
+  <property name="doc"  location="doc"/>
+  <property name="test" location="test"/>
 
-  <property name="doc_pkgs" value="com.xetrix.*"/>
+  <property name="doc_pkgs" value="com.xetrix.xmpp.*"/>
 
   <path id="project.class.path">
     <fileset dir="${lib}">
       <include name="xpp.jar"/>
       <include name="jzlib.jar"/>
-      <include name="jargs.jar"/>
+    </fileset>
+    <pathelement path="${java.class.path}/"/>
+  </path>
+
+  <path id="test.class.path">
+    <fileset dir="${bin}">
+      <include name="xmpp.jar"/>
     </fileset>
     <pathelement path="${java.class.path}/"/>
   </path>
@@ -37,13 +43,9 @@
   </target>
 
   <target name="dist" depends="compile" description="Generate the distribution">
-    <jar jarfile="${bin}/${testername}-${DSTAMP}.jar" basedir="${tmp}">
-      <manifest>
-        <attribute name="Main-Class" value="com.xetrix.XatemTest"/>
-      </manifest>
+    <jar jarfile="${bin}/${xmpplibname}.jar" basedir="${tmp}">
       <zipfileset includes="**/*.class" src="${lib}/xpp.jar"/>
       <zipfileset includes="**/*.class" src="${lib}/jzlib.jar"/>
-      <zipfileset includes="**/*.class" src="${lib}/jargs.jar"/>
     </jar>
   </target>
 
@@ -64,18 +66,25 @@
              stylesheetfile="${doc}/javadoc_stylesheet.css"/>
   </target>
 
-  <target name="test" depends="dist" description="Launch the JAR">
-    <java jar="${bin}/${testername}-${DSTAMP}.jar" fork="true">
-      <arg value="jmroca@xetrix.com"/>
-      <arg value="dev"/>
-      <arg value="talk.google.com"/>
-      <arg value="5222"/>
-      <arg value="2"/>
-    </java>
+  <!-- Test -->
+  <target name="compiletester" depends="dist" description="Compile the tester jar">
+    <javac srcdir="${test}" destdir="${tmp}" classpathref="test.class.path" includeantruntime="false" />
   </target>
 
-<!--java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 2-->
+  <target name="disttester" depends="compiletester" description="Generate the distribution">
+    <jar jarfile="${bin}/${testername}.jar" basedir="${tmp}">
+      <manifest>
+        <attribute name="Main-Class" value="com.xetrix.XatemTest"/>
+        <attribute name="Class-Path" value="${xmpplibname}.jar"/>
+      </manifest>
+    </jar>
+  </target>
 
+  <target name="test" depends="disttester" description="Launch the tester JAR">
+    <java jar="${bin}/${testername}.jar" fork="true" />
+  </target>
+
+  <!-- Cleanups -->
   <target name="clean" description="Clean up" >
     <delete dir="${tmp}"/>
     <delete dir="${bin}"/>

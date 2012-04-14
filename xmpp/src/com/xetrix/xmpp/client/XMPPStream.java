@@ -12,8 +12,6 @@ import com.xetrix.xmpp.stanza.XMPPStanza;
 import com.xetrix.xmpp.stanza.XMPPStanzaIQ;
 import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
-import com.xetrix.xmpp.util.Log; // DUBG
-
 public class XMPPStream {
   XMPPClient client;
 
@@ -192,7 +190,6 @@ public class XMPPStream {
     try {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
-        Log.write("S: " + stanza , 7); // DEBUG
         client.socket.writer.write(stanza);
         client.socket.writer.flush();
       }
@@ -305,7 +302,6 @@ public class XMPPStream {
       return;
     } else {
       // TODO: Unhandled ERROR or RESULT IQ received.
-      Log.write("R: " + repeat(' ', parser.getDepth()) + iq.toXML(), 4); // DEBUG
     }
 
     return;
@@ -394,14 +390,5 @@ public class XMPPStream {
       }
     }
     return methods;
-  }
-
-  // DEBUG METHOD
-  private static String repeat(char c, int i) {
-    String tst = "";
-    for(int j = 0; j < i; j++) {
-      tst = tst+c;
-    }
-    return tst;
   }
 }

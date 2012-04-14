@@ -1,6 +1,8 @@
 package com.xetrix;
 
-import java.io.Console;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 import com.xetrix.xmpp.client.XMPPClient;
 import com.xetrix.xmpp.client.XMPPClientListener;
@@ -9,15 +11,13 @@ import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
 import com.xetrix.xmpp.util.Log;
 
-import jargs.gnu.CmdLineParser;
-
 public class XatemTest {
   // Constants
   private static final String    PROG_NAME = "XAT'EM Tester - A Jabber client by XETRIX";
   private static final String    VERSION = "0.1";
   private static final String    COPYRIGHT = "(c) 2011 - XETRIX";
 
-  private XMPPClient             xc;
+  private String     account;
 
   private String     username;
   private String     password;
@@ -25,32 +25,53 @@ public class XatemTest {
   private String     server;
   private Integer    port;
   private Integer    socksec;
+  private XMPPClient xc;
 
-  public XatemTest() {
+  public XatemTest(String ac) {
+    account = ac;
+    try {
+      Properties prop = new Properties();
+      prop.load(new FileInputStream("test/" + ac + ".properties"));
+
+      username = prop.getProperty("username");
+      password = prop.getProperty("password");
+      resource = prop.getProperty("resource");
+      server   = prop.getProperty("host");
+      port     = Integer.parseInt(prop.getProperty("port"));
+      socksec  = Integer.parseInt(prop.getProperty("securitymode"));
+    }
+    catch (Exception e) {
+      Log.write("No properties file found for account " + ac + " (" + ac + ".properties)", 1);
+      account = "";
+      return;
+    }
   }
 
-  public void MainLoop() {
-    this.initClient();
-    this.connectClient();
+  public void start() {
+    if ("".equals(account)) {
+      return;
+    }
+    init();
+    connect();
     while (true) {
       try {
         if (!xc.isConnected()) {
-          System.exit(2);
+          return;
         }
-        Thread.currentThread().sleep(2500);
+        Thread.currentThread().sleep(1000);
       } catch (InterruptedException e) {
       }
     }
   }
 
-  public void connectClient() {
+  private void connect() {
     if (!xc.connect(this.socksec)) {
-      Log.write("Error connecting.", 3);
+      Log.write("Error connecting: " + account, 3);
     }
   }
 
-  public void initClient() {
-    Log.write("Initiating client...", 6);
+  private void init() {
+    Log.write("Initiating client: " + account, 6);
     if (this.resource!="") {
       this.xc = new XMPPClient(this.username, this.password, this.resource, 24,
         this.server, this.port);
@@ -61,37 +82,37 @@ public class XatemTest {
     this.xc.setListener(new XMPPClientListener() {
       // Event Handlers
       public void onConnect() {
-        Log.write("Connected.",6);
+        Log.write(account + ": " + "Connected.",7);
       }
       public void onDisconnect() {
-        Log.write("Disconnected.",1);
+        Log.write(account + ": " + "Disconnected.",6);
       }
       public void onSecurized() {
-        Log.write("SSL handshake done.",6);
+        Log.write(account + ": " + "SSL handshake done.",7);
       }
       public void onCompressed() {
-        Log.write("Compression enabled.",6);
+        Log.write(account + ": " + "Compression enabled.",7);
       }
       public void onConnectionError(XMPPError e) {
-        Log.write(e.toString(),3);
+        Log.write(account + ": " + e.toString(),3);
       }
       public void onStreamOpened(String cid, String from) {
-        Log.write("Stream opened; from: " + from + ", id: " + cid,6);
+        Log.write(account + ": " + "Stream opened; from: " + from + ", id: " + cid,7);
       }
       public void onStreamClosed() {
-        Log.write("Stream closed.",6);
+        Log.write(account + ": " + "Stream closed.",7);
       }
       public void onStreamError(XMPPError e) {
-        Log.write(e.toString(),3);
+        Log.write(account + ": " + e.toString(),3);
       }
       public void onReadyforAuthentication() {
-        Log.write("Ready to authenticate.",6);
+        Log.write(account + ": " + "Ready to authenticate.",7);
       }
       public void onAuthenticated() {
-        Log.write("Authenticated",6);
+        Log.write(account + ": " + "Authenticated",7);
       }
       public void onResourceBinded(XMPPStanzaIQBind bind) {
-        Log.write("Binded as " + xc.getFullJid(),6);
+        Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
         /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
           public String getPayloadXML() {
             return "<query xmlns=\"jabber:iq:roster\"></query>";
@@ -109,72 +130,31 @@ public class XatemTest {
     System.out.println(COPYRIGHT + "\n");
   }
 
-  public static void usage() {
-    banner();
-    System.out.println("Usage:");
-    System.out.println("xatem [options] jabberId [resource] [server] [port] [secmode]\n");
-  }
-
   public static void main(String args[]) {
-    String username = "";
-    String password = "";
-    String resource = "";
-    String server = "";
-    String port = "";
-    String socksec = "0";
-
-    try {
-      CmdLineParser parser = new CmdLineParser();
-      parser.parse(args);
-      try {
-        String [] remargs = parser.getRemainingArgs();
-        username = remargs[0];
-        if (remargs.length>1) {
-          resource = remargs[1];
-          if (remargs.length>2) {
-            server = remargs[2];
-            if (remargs.length>3) {
-              port = remargs[3];
-              if (remargs.length>4) {
-                socksec = remargs[4];
-              }
-            }
-          }
-        } else {
-          resource = "";
-        }
-
-        Console cons;
-        char[] passwd;
-        if ((cons = System.console()) != null &&
-          (passwd = cons.readPassword("Password for %s:", username)) != null) {
-          password = new String(passwd);
-          java.util.Arrays.fill(passwd, ' ');
-        }
-      } catch ( Exception e ) {
-        e.printStackTrace();
-        System.err.println("Parse required arguments error.\n\n");
-        usage();
-        System.exit(2);
+    Thread t1 = new Thread() {
+      public void run() {
+        XatemTest x = new XatemTest("gtalk");
+        x.start();
       }
+    };
+    Thread t2 = new Thread() {
+      public void run() {
+        XatemTest x = new XatemTest("facebook");
+        x.start();
+      }
+    };
+    Thread t3 = new Thread() {
+      public void run() {
+        XatemTest x = new XatemTest("jabber");
+        x.start();
+      }
+    };
 
-      XatemTest xatem = new XatemTest();
-      xatem.username = username;
-      xatem.password = password;
-      xatem.resource = resource;
-      xatem.server = server;
-      xatem.port = Integer.parseInt(port);
-      xatem.socksec = Integer.parseInt(socksec);
-
-      Log.write("All input args processed");
-      Log.write("Entering to the main loop", 7);
-
-      xatem.MainLoop();
-    } catch (Exception e) {
-      System.err.println("!!! Runtime error:");
-      System.err.println(e.getMessage()+"\n\n");
-      usage();
-      System.exit(2);
-    }
+    t1.setName("XatemTesterGtalk");
+    t1.start();
+    t2.setName("XatemTesterFacebook");
+    t2.start();
+    t3.setName("XatemTesterJabber");
+    t3.start();
   }
 }
