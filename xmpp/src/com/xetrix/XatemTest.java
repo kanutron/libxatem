@@ -11,7 +11,7 @@ import com.xetrix.xmpp.util.Log;
 
 import jargs.gnu.CmdLineParser;
 
-public class XatemTester {
+public class XatemTest {
   // Constants
   private static final String    PROG_NAME = "XAT'EM Tester - A Jabber client by XETRIX";
   private static final String    VERSION = "0.1";
@@ -26,7 +26,7 @@ public class XatemTester {
   private Integer    port;
   private Integer    socksec;
 
-  public XatemTester() {
+  public XatemTest() {
   }
 
   public void MainLoop() {
@@ -158,7 +158,7 @@ public class XatemTester {
         System.exit(2);
       }
 
-      XatemTester xatem = new XatemTester();
+      XatemTest xatem = new XatemTest();
       xatem.username = username;
       xatem.password = password;
       xatem.resource = resource;

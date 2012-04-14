@@ -1,21 +1,26 @@
-<project name="XatemTester" default="dist" basedir=".">
+<project name="XatemXMPP" default="dist" basedir=".">
   <description>
     Xatem Tester
   </description>
 
   <!-- set global properties for this build -->
-  <property name="jarname" value="XatemTester"/>
+  <property name="testername" value="XatemTest"/>
+  <property name="xmppname" value="XatemXMPP"/>
+  <property name="xmpplibname" value="xmpp"/>
+
   <property name="src" location="src"/>
   <property name="lib" location="lib"/>
   <property name="tmp" location="tmp"/>
   <property name="bin" location="bin"/>
   <property name="doc" location="doc"/>
 
-  <property name="apidoc_packages" value="com.xetrix.*"/>
+  <property name="doc_pkgs" value="com.xetrix.*"/>
 
   <path id="project.class.path">
     <fileset dir="${lib}">
-      <include name="**/*.jar"/>
+      <include name="xpp.jar"/>
+      <include name="jzlib.jar"/>
+      <include name="jargs.jar"/>
     </fileset>
     <pathelement path="${java.class.path}/"/>
   </path>
@@ -33,9 +38,9 @@
 
   <target name="dist" depends="compile" description="Generate the distribution" >
     <mkdir dir="${bin}"/>
-    <jar jarfile="${bin}/${jarname}-${DSTAMP}.jar" basedir="${tmp}">
+    <jar jarfile="${bin}/${testername}-${DSTAMP}.jar" basedir="${tmp}">
       <manifest>
-        <attribute name="Main-Class" value="com.xetrix.XatemTester"/>
+        <attribute name="Main-Class" value="com.xetrix.XatemTest"/>
       </manifest>
       <zipfileset includes="**/*.class" src="${lib}/xpp.jar"/>
       <zipfileset includes="**/*.class" src="${lib}/jzlib.jar"/>
@@ -43,19 +48,19 @@
     </jar>
   </target>
 
-  <target name="apidoc">
+  <target name="doc">
     <delete dir="${doc}"/>
     <mkdir dir="${doc}"/>
-    <javadoc packagenames="${apidoc_packages}"
+    <javadoc packagenames="${doc_pkgs}"
              public="yes"
              sourcepath="${src}"
              destdir="${doc}"
              author="true"
              version="true"
              use="true"
-             windowtitle="${apidoc_packages}"
-             doctitle="${apidoc_packages}"
-             bottom="${apidoc_packages}"
+             windowtitle="${xmppname}"
+             doctitle="${xmppname}"
+             bottom="${xmppname}"
              stylesheetfile="${doc}/javadoc_stylesheet.css"
     />
   </target>
