@@ -9,6 +9,9 @@
   <property name="lib" location="lib"/>
   <property name="tmp" location="tmp"/>
   <property name="bin" location="bin"/>
+  <property name="doc" location="doc"/>
+
+  <property name="apidoc_packages" value="com.xetrix.*"/>
 
   <path id="project.class.path">
     <fileset dir="${lib}">
@@ -21,10 +24,11 @@
     <tstamp/>
     <mkdir dir="${tmp}"/>
     <mkdir dir="${bin}"/>
+    <mkdir dir="${doc}"/>
   </target>
 
   <target name="compile" depends="init" description="Compile the source">
-    <javac srcdir="${src}" destdir="${tmp}" classpathref="project.class.path"/>
+    <javac srcdir="${src}" destdir="${tmp}" classpathref="project.class.path" includeantruntime="false" />
   </target>
 
   <target name="dist" depends="compile" description="Generate the distribution" >
@@ -39,11 +43,29 @@
     </jar>
   </target>
 
+  <target name="apidoc">
+    <delete dir="${doc}"/>
+    <mkdir dir="${doc}"/>
+    <javadoc packagenames="${apidoc_packages}"
+             public="yes"
+             sourcepath="${src}"
+             destdir="${doc}"
+             author="true"
+             version="true"
+             use="true"
+             windowtitle="${apidoc_packages}"
+             doctitle="${apidoc_packages}"
+             bottom="${apidoc_packages}"
+             stylesheetfile="${doc}/javadoc_stylesheet.css"
+    />
+  </target>
+
 <!--java -Djavax.net.debug=none -Djava.net.debug=none -jar $CLS.jar jmroca@xetrix.com dev talk.google.com 5222 2-->
 
   <target name="clean" description="clean up" >
     <delete dir="${tmp}"/>
     <delete dir="${bin}"/>
+    <delete dir="${doc}"/>
   </target>
 
 </project>
