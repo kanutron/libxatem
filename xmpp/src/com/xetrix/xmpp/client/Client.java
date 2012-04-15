@@ -3,10 +3,12 @@ package com.xetrix.xmpp.client;
 import java.util.List;
 import java.io.IOException;
 
+import com.xetrix.xmpp.stanza.Stanza;
+import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
-public class Client {
+public class Client implements ConnectionListener, StreamListener {
   private static final String    CLIENT_NAME = "xatem";
 
   // Externally inmutable configuration
@@ -18,68 +20,94 @@ public class Client {
   private Integer                port;
   private String                 service;
 
-  // Life cycle control
-  private boolean               connected = false;
-  private boolean               authenticated = false;
-  private boolean               binded = false;
-  private boolean               sessionStarted = false;
-
   // XMPP Client components
-  protected Connection           conn = new Connection(this);
-  protected Stream               stream = new Stream(this);
-  protected Auth                 auth;
+  private Connection             conn;
+  private Auth                   auth;
+  private Stream                 stream;
 
   // Event listeners
-  private ClientListener         listener;
+  private ConnectionListener     connectionListener;
+  private StreamListener         streamListener;
 
   // Constructors
-  public Client(String u, String p, String r, Integer pr, String h, Integer prt, String s) {
-    username = u;
-    password = p;
-    resource = r;
-    priority = pr;
-    host = h;
-    port = prt;
-    service = s;
-  }
-
-  public Client(String u, String p, String r, Integer pr, String h, Integer prt) {
-    username = u;
-    password = p;
-    resource = r;
-    priority = pr;
-    host = h;
-    port = prt;
-    if (username.indexOf("@")>0) {
-      service = username.substring(username.indexOf("@")+1);
-    } else {
-      service = host;
-    }
-  }
-
-  public Client(String u, String p, String r, Integer pr) {
-    username = u;
-    password = p;
-    resource = r;
-    priority = pr;
-    host = username.substring(username.indexOf("@")+1);
-    port = 5222;
-    service = host;
-  }
-
-  public Client(String u, String p) {
-    username = u;
-    password = p;
-    resource = CLIENT_NAME;
-    priority = 24;
-    host = username.substring(username.indexOf("@")+1);
-    port = 5222;
-    service = host;
+  public Client() {
+    auth = new StandardAuth();
+    conn = new StandardConnection(this);
+    stream = new StandardStream(this, auth, conn);
   }
 
   // Public methods
-  public void setListener(ClientListener l) {
-    listener = l;
+  public void setAuth(Auth a) {
+    auth = a;
+    stream.setAuth(auth);
+  }
+
+  public void setConnection(Connection c) {
+    conn = c;
+    setConnectionListener(conn.getListener());
+    conn.setListener(this);
+    stream.setConnection(conn);
+  }
+
+  public void setStream(Stream s) {
+    stream = s;
+    setStreamListener(stream.getListener());
+    stream.setListener(this);
+    stream.setAuth(auth);
+    stream.setConnection(conn);
+  }
+
+  public void setConnectionListener(ConnectionListener listener) {
+    if (listener != this) {
+      connectionListener = listener;
+    } else {
+      connectionListener = null;
+    }
+  }
+
+  public void setStreamListener(StreamListener listener) {
+    if (listener != this) {
+      streamListener = listener;
+    } else {
+      streamListener = null;
+    }
+  }
+
+  public void setUserData(String user, String pass, String res, Integer prior,
+                      String hst, Integer prt, String serv) {
+    username = user;
+    password = pass;
+    resource = res;
+    priority = prior;
+    host = hst;
+    port = prt;
+    service = serv;
+    auth.initAuthData(username, password, resource, service);
+  }
+
+  public void setUserData(String user, String pass, String res, Integer prior,
+                      String hst, Integer prt) {
+    String serv = hst;
+    if (user.indexOf("@")>0) {
+      serv = user.substring(user.indexOf("@")+1);
+    }
+    setUserData(user, pass, res, prior, hst, prt, serv);
+  }
+
+  public void setUserData(String user, String pass, String res, Integer prior) {
+    String hst = user.substring(user.indexOf("@")+1);
+    Integer prt = 5222;
+    String serv = hst;
+    setUserData(user, pass, res, prior, hst, prt, serv);
+  }
+
+  public void setUserData(String user, String pass) {
+    String res = CLIENT_NAME;
+    Integer prior = 24;
+    String hst = user.substring(user.indexOf("@")+1);
+    Integer prt = 5222;
+    String serv = hst;
+    setUserData(user, pass, res, prior, hst, prt, serv);
   }
 
   public String getJid() {
@@ -110,194 +138,165 @@ public class Client {
   public String getService() {
     return service;
   }
-  public String getConnectionID() {
-    return stream.getConnectionID();
+  public String getStreamId() {
+    return stream.getStreamId();
   }
 
   // Life cycle
   public boolean isConnected() {
-    return connected && conn.isConnected();
+    return conn.isConnected();
   }
   public boolean isSecurized() {
-    return conn.securized;
+    return conn.isSecurized();
   }
   public boolean isCompressed() {
-    return conn.compressed;
+    return conn.isCompressed();
+  }
+  public boolean isStreamOpened() {
+    return stream.isOpened();
   }
   public boolean isAuthed() {
-    return authenticated;
+    return stream.isAuthed();
   }
   public boolean isBinded() {
-    return binded;
+    return stream.isBinded();
   }
   public boolean isSessionStarted() {
-    return sessionStarted;
+    return stream.isSessionStarted();
   }
 
   // Mehtods
-  public boolean connect(Connection.Security s) {
-    conn = new Connection(this);
+  public void connect(Connection.Security s) {
     if (conn.setSecurity(s)) {
-      if (conn.connect(host, port)) {
-        connected = true;
-        stream.initStream();
-        return true;
-      }
+      conn.connect(host, port);
     }
-    return false;
   }
 
-  public boolean connect(Integer s) {
+  public void connect(Integer s) {
     switch (s) {
-      case 0: return connect(Connection.Security.none);
-      case 1: return connect(Connection.Security.ssl);
-      case 2: return connect(Connection.Security.tls);
+      case 0: connect(Connection.Security.none); break;
+      case 1: connect(Connection.Security.ssl); break;
+      case 2: connect(Connection.Security.tls); break;
     }
-    return false;
   }
 
-  public boolean connect(String s) {
-    return connect(Connection.Security.fromString(s));
+  public void connect(String s) {
+    connect(Connection.Security.fromString(s));
   }
 
-  public boolean connect() {
-    return connect(Connection.Security.none);
+  public void connect() {
+    connect(Connection.Security.none);
   }
 
-  public boolean disconnect() {
-    stream.finishStream();
+  public void disconnect() {
     conn.disconnect();
-
-    connected = false;
-    authenticated = false;
-    binded = false;
-
-    stream = new Stream(this);
-    conn = new Connection(this);
-
-    return true;
   }
 
   // Event Handlers
-  void onConnect() {
-    if (listener instanceof ClientListener) {
-      listener.onConnect();
+  public void onConnect() {
+    stream.initStream(service);
+    if (connectionListener instanceof ConnectionListener) {
+      connectionListener.onConnect();
     }
   }
 
-  void onDisconnect() {
-    if (listener instanceof ClientListener) {
-      listener.onDisconnect();
+  public void onDisconnect() {
+    if (connectionListener instanceof ConnectionListener) {
+      connectionListener.onDisconnect();
     }
   }
 
-  void onSecurized() {
-    if (listener instanceof ClientListener) {
-      listener.onSecurized();
+  public void onSecurized() {
+    if (connectionListener instanceof ConnectionListener) {
+      connectionListener.onSecurized();
     }
   }
 
-  void onCompressed() {
-    if (listener instanceof ClientListener) {
-      listener.onCompressed();
+  public void onCompressed() {
+    if (connectionListener instanceof ConnectionListener) {
+      connectionListener.onCompressed();
     }
   }
 
-  void onConnectionError(XMPPError e) {
-    if (listener instanceof ClientListener) {
-      listener.onConnectionError(e);
+  public void onConnectionError(XMPPError e) {
+    if (connectionListener instanceof ConnectionListener) {
+      connectionListener.onConnectionError(e);
     }
-    if (connected) {
+    if (isConnected()) {
       if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
         disconnect();
       }
     }
   }
 
-  void onStreamOpened(String cid, String from) {
-    if (cid != null) {
-      stream.setConnectionID(cid);
-    }
-    if (from != null) {
+  public void onStreamOpened(String from) {
+    if ("".equals(from) && from != null) {
       service = from;
     }
-    if (listener instanceof ClientListener) {
-      listener.onStreamOpened(cid, from);
+    if (streamListener instanceof StreamListener) {
+      streamListener.onStreamOpened(service);
     }
   }
 
-  void onStreamClosed() {
-    if (listener instanceof ClientListener) {
-      listener.onStreamClosed();
+  public void onReadyForBindResource() {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onReadyForBindResource();
     }
-    if (connected) {
-      disconnect();
-    }
-  }
-
-  void onStreamError(XMPPError e) {
-    if (listener instanceof ClientListener) {
-      listener.onStreamError(e);
-    }
-    if (connected) {
-      if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
-        disconnect();
-      }
+    if (!isBinded()) {
+      IQ iqb = new IQ(IQ.Type.set, new Bind(getFullJid()));
+      stream.pushStanza(iqb);
     }
   }
 
-  void onReceiveSASLMechanisms(List<String> mechs) {
-    auth = new Auth(this);
-    auth.setServerMechanisms(mechs);
-    if (listener instanceof ClientListener) {
-      listener.onReceiveSASLMechanisms(mechs);
-    }
-  }
-
-  void onReceiveCompressionMethods(List<String> methods) {
-    conn.compressionSetServerMethods(methods);
-    if (listener instanceof ClientListener) {
-      listener.onReceiveCompressionMethods(methods);
-  }
-    }
-
-  void onReadyforAuthentication() {
-    if (listener instanceof ClientListener) {
-      listener.onReadyforAuthentication();
-    }
-    String mech = auth.getBestMechanism();
-    if (mech != "") {
-      auth.initAuthData(username, password, resource, service);
-      auth.startAuthWith(mech);
-    } else {
-      onStreamError(new XMPPError(XMPPError.Type.AUTH, "feature-not-implemented",
-        "No suitable SASL mechanisms found. Can't login."));
-    }
-  }
-
-  void onAuthenticated() {
-    authenticated = true;
-    auth = null;
-    if (listener instanceof ClientListener) {
-      listener.onAuthenticated();
-    }
-  }
-
-  void onResourceBinded(Bind bind) {
-    binded = true;
+  public void onResourceBinded(Bind bind) {
     username = bind.getJid();
     if (bind.getResource() != null) {
       resource = bind.getResource();
     }
-    if (listener instanceof ClientListener) {
-      listener.onResourceBinded();
+    if (streamListener instanceof StreamListener) {
+      streamListener.onResourceBinded(bind);
     }
   }
 
-  void onSessionStarted(Session session) {
-    sessionStarted = true;
-    if (listener instanceof ClientListener) {
-      listener.onSessionStarted();
+  public void onReadyForStartSession() {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onReadyForStartSession();
+    }
+    if (!isSessionStarted()) {
+      IQ iqs = new IQ(IQ.Type.set, new Session());
+      stream.pushStanza(iqs);
+    }
+  }
+
+  public void onSessionStarted(Session session) {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onSessionStarted(session);
+    }
+  }
+
+  public void onStreamClosed() {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onStreamClosed();
+    }
+    if (isConnected()) {
+      disconnect();
+    }
+  }
+
+  public void onStreamError(XMPPError e) {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onStreamError(e);
+    }
+    if (isConnected()) {
+      if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
+        disconnect();
+      }
+    }
+  }
+
+  public void onAuthenticated() {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onAuthenticated();
     }
   }
 }

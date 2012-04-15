@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.xetrix.xmpp.client.Client;
-import com.xetrix.xmpp.client.ClientListener;
+import com.xetrix.xmpp.client.StreamListener;
+import com.xetrix.xmpp.client.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.payload.Bind;
+import com.xetrix.xmpp.payload.Session;
 
-public class XatemTest {
+public class XatemTest implements ConnectionListener, StreamListener {
   // Constants
   private static final String    PROG_NAME = "XAT'EM Tester - A Jabber client by XETRIX";
   private static final String    VERSION = "0.1";
@@ -61,69 +64,82 @@ public class XatemTest {
     }
   }
 
-  private void connect() {
-    if (!xc.connect(this.socksec)) {
-      Log.write("Error connecting: " + account, 3);
-    }
+  public void connect() {
+    xc.connect(this.socksec);
   }
 
-  private void init() {
+  public void init() {
     Log.write("Initiating client: " + account, 6);
+    this.xc = new Client();
     if (this.resource!="") {
-      this.xc = new Client(this.username, this.password, this.resource, 24,
-        this.server, this.port);
+      this.xc.setUserData(username, password, resource, 24, server, port);
     } else {
-      this.xc = new Client(this.username, this.password);
+      this.xc.setUserData(username, password);
     }
-
-    this.xc.setListener(new ClientListener() {
-      // Event Handlers
-      public void onConnect() {
-        Log.write(account + ": " + "Connected.",7);
-      }
-      public void onDisconnect() {
-        Log.write(account + ": " + "Disconnected.",6);
-      }
-      public void onSecurized() {
-        Log.write(account + ": " + "SSL handshake done.",7);
-      }
-      public void onCompressed() {
-        Log.write(account + ": " + "Compression enabled.",7);
-      }
-      public void onConnectionError(XMPPError e) {
-        Log.write(account + ": " + e.toString(),3);
-      }
-      public void onStreamOpened(String cid, String from) {
-        Log.write(account + ": " + "Stream opened; from: " + from + ", id: " + cid,7);
-      }
-      public void onStreamClosed() {
-        Log.write(account + ": " + "Stream closed.",7);
-      }
-      public void onStreamError(XMPPError e) {
-        Log.write(account + ": " + e.toString(),3);
-      }
-      public void onReadyforAuthentication() {
-        Log.write(account + ": " + "Ready to authenticate.",7);
-      }
-      public void onAuthenticated() {
-        Log.write(account + ": " + "Authenticated",7);
-      }
-      public void onResourceBinded() {
-        Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
-      }
-      public void onSessionStarted() {
-        Log.write(account + ": " + "Session started.",6);
-        /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
-          public String getPayloadXML() {
-            return "<query xmlns=\"jabber:iq:roster\"></query>";
-          }
-        };
-        iq.setFrom(this.getFullJid());
-        this.stream.pushStanza(iq);
-        this.stream.pushStanza("<presence></presence>");*/
-      }
-    });
+    this.xc.setConnectionListener(this);
+    this.xc.setStreamListener(this);
   }
+
+  // Event handlers
+  public void onConnect() {
+    Log.write(account + ": " + "Connected.",7);
+  }
+
+  public void onDisconnect() {
+    Log.write(account + ": " + "Disconnected.",6);
+  }
+
+  public void onSecurized() {
+    Log.write(account + ": " + "SSL handshake done.",7);
+  }
+
+  public void onCompressed() {
+    Log.write(account + ": " + "Compression enabled.",7);
+  }
+
+  public void onConnectionError(XMPPError e) {
+    Log.write(account + ": Conn: " + e.toString(),3);
+  }
+
+  public void onStreamOpened(String from) {
+    Log.write(account + ": " + "Stream opened; from: " + from,7);
+  }
+
+  public void onReadyForBindResource() {
+  }
+
+  public void onResourceBinded(Bind bind) {
+    Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
+  }
+
+  public void onReadyForStartSession() {
+  }
+
+  public void onSessionStarted(Session session) {
+    Log.write(account + ": " + "Session started.",6);
+    /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
+      public String getPayloadXML() {
+        return "<query xmlns=\"jabber:iq:roster\"></query>";
+      }
+    };
+    iq.setFrom(this.getFullJid());
+    this.stream.pushStanza(iq);
+    this.stream.pushStanza("<presence></presence>");*/
+  }
+
+  public void onStreamClosed() {
+    Log.write(account + ": " + "Stream closed.",7);
+  }
+
+  public void onStreamError(XMPPError e) {
+    Log.write(account + ": Stream: " + e.toString(),3);
+  }
+
+  public void onAuthenticated() {
+    Log.write(account + ": " + "Authenticated",7);
+  }
+
+  // ////////////////////////////////////////////////
 
   public static void banner() {
     System.out.println(PROG_NAME + " " + VERSION);
