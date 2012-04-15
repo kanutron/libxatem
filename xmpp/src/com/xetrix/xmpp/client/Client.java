@@ -25,7 +25,7 @@ public class Client {
   private boolean               sessionStarted = false;
 
   // XMPP Client components
-  protected Connection           socket = new Connection(this);
+  protected Connection           conn = new Connection(this);
   protected Stream               stream = new Stream(this);
   protected Auth                 auth;
 
@@ -116,13 +116,13 @@ public class Client {
 
   // Life cycle
   public boolean isConnected() {
-    return connected && socket.isConnected();
+    return connected && conn.isConnected();
   }
   public boolean isSecurized() {
-    return socket.securized;
+    return conn.securized;
   }
   public boolean isCompressed() {
-    return socket.compressed;
+    return conn.compressed;
   }
   public boolean isAuthed() {
     return authenticated;
@@ -136,9 +136,9 @@ public class Client {
 
   // Mehtods
   public boolean connect(Connection.Security s) {
-    socket = new Connection(this);
-    if (socket.setSecurity(s)) {
-      if (socket.connect(host, port)) {
+    conn = new Connection(this);
+    if (conn.setSecurity(s)) {
+      if (conn.connect(host, port)) {
         connected = true;
         stream.initStream();
         return true;
@@ -166,14 +166,14 @@ public class Client {
 
   public boolean disconnect() {
     stream.finishStream();
-    socket.disconnect();
+    conn.disconnect();
 
     connected = false;
     authenticated = false;
     binded = false;
 
     stream = new Stream(this);
-    socket = new Connection(this);
+    conn = new Connection(this);
 
     return true;
   }
@@ -255,7 +255,7 @@ public class Client {
   }
 
   void onReceiveCompressionMethods(List<String> methods) {
-    socket.compressionSetServerMethods(methods);
+    conn.compressionSetServerMethods(methods);
     if (listener instanceof ClientListener) {
       listener.onReceiveCompressionMethods(methods);
     }
