@@ -8,6 +8,8 @@ import com.xetrix.xmpp.client.Client;
 import com.xetrix.xmpp.client.StreamListener;
 import com.xetrix.xmpp.client.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.payload.IQPayload;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
@@ -96,6 +98,7 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onReadyForBindResource() {
+    Log.write(account + ": " + "Ready to bind.",6);
   }
 
   public void onResourceBinded(Bind bind) {
@@ -103,18 +106,21 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onReadyForStartSession() {
+    Log.write(account + ": " + "Ready to start session.",6);
   }
 
   public void onSessionStarted(Session session) {
     Log.write(account + ": " + "Session started.",6);
-    /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
-      public String getPayloadXML() {
+    // DEBUG
+    IQ iq = new IQ(IQ.Type.get, new IQPayload() {
+      public String toXML() {
         return "<query xmlns=\"jabber:iq:roster\"></query>";
-      }
-    };
-    iq.setFrom(this.getFullJid());
-    this.stream.pushStanza(iq);
-    this.stream.pushStanza("<presence></presence>");*/
+      };
+    });
+    iq.setFrom(xc.getFullJid());
+    iq.setId(xc.getNextStanzaId());
+    xc.pushStanza(iq);
+    xc.pushStanza("<presence></presence>");
   }
 
   public void onStreamClosed() {

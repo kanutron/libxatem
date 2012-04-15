@@ -192,6 +192,18 @@ public class Client implements ConnectionListener, StreamListener {
     conn.disconnect();
   }
 
+  public void pushStanza(String s) {
+    stream.pushStanza(s);
+  }
+
+  public void pushStanza(Stanza s) {
+    stream.pushStanza(s);
+  }
+
+  public String getNextStanzaId() {
+    return stream.getNextStanzaId();
+  }
+
   // Event Handlers
   public void onConnect() {
     stream.initStream(service);
@@ -243,6 +255,7 @@ public class Client implements ConnectionListener, StreamListener {
       streamListener.onReadyForBindResource();
     }
     if (!isBinded()) {
+      // TODO: set IQ handler by ID
       IQ iqb = new IQ(IQ.Type.set, new Bind(getFullJid()));
       stream.pushStanza(iqb);
     }
@@ -263,6 +276,7 @@ public class Client implements ConnectionListener, StreamListener {
       streamListener.onReadyForStartSession();
     }
     if (!isSessionStarted()) {
+      // TODO: set IQ handler by ID
       IQ iqs = new IQ(IQ.Type.set, new Session());
       stream.pushStanza(iqs);
     }

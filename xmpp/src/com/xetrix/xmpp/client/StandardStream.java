@@ -213,7 +213,6 @@ public class StandardStream implements Stream {
           } else if (parser.getName().equals("features")) {
             features.parse(parser);
             if (processFeatures()) {
-              // Stream will be reinitiated
               return;
             }
           } else if (parser.getName().equals("proceed")) {
