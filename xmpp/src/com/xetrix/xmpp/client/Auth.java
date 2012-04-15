@@ -11,8 +11,8 @@ import java.security.NoSuchAlgorithmException;
 
 import com.xetrix.xmpp.util.Base64;
 
-public class XMPPAuth {
-  private XMPPClient client;
+public class Auth {
+  private Client client;
   private static List<String> clientMechs = new ArrayList<String>();
   private List<String> serverMechs = new ArrayList<String>();
 
@@ -35,7 +35,7 @@ public class XMPPAuth {
   private String  service;
 
   // Constructors
-  public XMPPAuth(XMPPClient c) {
+  public Auth(Client c) {
     client = c;
   }
 

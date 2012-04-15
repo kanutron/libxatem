@@ -1,29 +1,23 @@
-package com.xetrix.xmpp.stanza;
+package com.xetrix.xmpp.payload;
 
 import org.xmlpull.v1.XmlPullParser;
 
-public class XMPPStanzaIQBind extends XMPPStanzaIQ {
-
+public class Bind extends IQPayload {
   // Bind data
   private String resource = null;
   private String jid = null;
 
   // Constructors
-  public XMPPStanzaIQBind() {
-    setType(Type.set);
-  }
-  public XMPPStanzaIQBind(String j) {
-    setType(Type.set);
+  public Bind() {}
+  public Bind(String j) {
     setJid(j);
   }
-  public XMPPStanzaIQBind(String j, String r) {
-    setType(Type.set);
+  public Bind(String j, String r) {
     setJid(j);
     setResource(r);
   }
-  public XMPPStanzaIQBind(XmlPullParser parser, XMPPStanzaIQ iq) throws Exception {
-    super(iq);
-    parseStanzaIQBind(parser);
+  public Bind(XmlPullParser parser) throws Exception {
+    parse(parser);
   }
 
   // Public methods
@@ -50,7 +44,7 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     }
   }
 
-  public String getPayloadXML() {
+  public String toXML() {
     StringBuilder buf = new StringBuilder();
     buf.append("<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">");
     if (resource != null) {
@@ -63,8 +57,7 @@ public class XMPPStanzaIQBind extends XMPPStanzaIQ {
     return buf.toString();
   }
 
-  // Private mehtods
-  public final void parseStanzaIQBind(XmlPullParser parser) throws Exception {
+  public void parse(XmlPullParser parser) throws Exception {
     if (!"bind".equals(parser.getName())) {
       return;
     }

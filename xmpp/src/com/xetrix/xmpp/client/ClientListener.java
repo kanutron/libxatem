@@ -1,11 +1,10 @@
 package com.xetrix.xmpp.client;
 
 import java.util.List;
-import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
-public abstract class XMPPClientListener {
+public abstract class ClientListener {
   // Constructors
-  public XMPPClientListener() {}
+  public ClientListener() {}
 
   // Event Handlers
   public void onConnect() {}
@@ -23,5 +22,6 @@ public abstract class XMPPClientListener {
 
   public void onAuthenticated() {}
   public void onReadyforAuthentication() {}
-  public void onResourceBinded(XMPPStanzaIQBind bind) {}
+  public void onResourceBinded() {}
+  public void onSessionStarted() {}
 }

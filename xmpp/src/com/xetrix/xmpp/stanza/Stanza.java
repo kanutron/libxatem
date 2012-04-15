@@ -1,10 +1,10 @@
 package com.xetrix.xmpp.stanza;
 
 import org.xmlpull.v1.XmlPullParser;
-
+import com.xetrix.xmpp.Parseable;
 import com.xetrix.xmpp.client.XMPPError;
 
-public abstract class XMPPStanza {
+public abstract class Stanza implements Parseable {
 
   // Class data
   private static String DEFAULT_XMLNS = "jabber:client";
@@ -20,11 +20,11 @@ public abstract class XMPPStanza {
   private XMPPError  error = null;
 
   // Constructors
-  public XMPPStanza() {}
-  public XMPPStanza(XmlPullParser parser) throws Exception {
-    parseStanza(parser);
+  public Stanza() {}
+  public Stanza(XmlPullParser parser) throws Exception {
+    parse(parser);
   }
-  public XMPPStanza(XMPPStanza stanza) {
+  public Stanza(Stanza stanza) {
     setXmlns(stanza.getXmlns());
     setId(stanza.getId());
     setFrom(stanza.getFrom());
@@ -90,6 +90,16 @@ public abstract class XMPPStanza {
     error = e;
   }
 
+  public void parse(XmlPullParser parser) throws Exception {
+    setId(parser.getAttributeValue(null, "id"));
+    setFrom(parser.getAttributeValue(null, "from"));
+    setTo(parser.getAttributeValue(null, "to"));
+    setLang(getLanguageAttribute(parser));
+    if (parser.getNamespace(null) != null) {
+      setXmlns(parser.getNamespace(null));
+    }
+  }
+
   public static String getLanguageAttribute(XmlPullParser parser) {
     for (int i = 0; i < parser.getAttributeCount(); i++) {
       String attributeName = parser.getAttributeName(i);
@@ -99,22 +109,6 @@ public abstract class XMPPStanza {
       }
     }
     return null;
-  }
-
-  public final void parseStanza(XmlPullParser parser) throws Exception {
-    if (!"presence".equals(parser.getName()) &&
-        !"message".equals(parser.getName()) &&
-        !"iq".equals(parser.getName())) {
-      return;
-    }
-
-    setId(parser.getAttributeValue(null, "id"));
-    setFrom(parser.getAttributeValue(null, "from"));
-    setTo(parser.getAttributeValue(null, "to"));
-    setLang(getLanguageAttribute(parser));
-    if (parser.getNamespace(null) != null) {
-      setXmlns(parser.getNamespace(null));
-    }
   }
 
   public abstract String toXML();

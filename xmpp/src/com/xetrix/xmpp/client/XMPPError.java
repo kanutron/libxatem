@@ -1,8 +1,7 @@
 package com.xetrix.xmpp.client;
 
 import org.xmlpull.v1.XmlPullParser;
-
-import com.xetrix.xmpp.stanza.XMPPStanza;
+import com.xetrix.xmpp.stanza.Stanza;
 
 public class XMPPError {
   // Class data
@@ -116,30 +115,7 @@ public class XMPPError {
     return buf.toString();
   }
 
-  // Enums
-  public enum Type {
-    AUTH,
-    CANCEL,
-    CONTINUE,
-    MODIFY,
-    WAIT;
-
-    public static Type fromString(String name) {
-      try {
-        return Type.valueOf(name.toUpperCase());
-      }
-      catch (Exception e) {
-        return CANCEL;
-      }
-    }
-
-    public String toString() {
-      return super.toString().toLowerCase();
-    }
-  }
-
-  // Private methods
-  private void parse(XmlPullParser parser) throws Exception {
+  public void parse(XmlPullParser parser) throws Exception {
     if (!"error".equals(parser.getName())) {
       if ("failure".equals(parser.getName())) {
         parseFailureAsError(parser);
@@ -164,7 +140,7 @@ public class XMPPError {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
         if (parser.getName().equals("text")) {
-          setTextLang(XMPPStanza.getLanguageAttribute(parser));
+          setTextLang(Stanza.getLanguageAttribute(parser));
           setText(parser.nextText());
         } else {
           String elementName = parser.getName();
@@ -183,6 +159,29 @@ public class XMPPError {
     }
   }
 
+  // Enums
+  public enum Type {
+    AUTH,
+    CANCEL,
+    CONTINUE,
+    MODIFY,
+    WAIT;
+
+    public static Type fromString(String name) {
+      try {
+        return Type.valueOf(name.toUpperCase());
+      }
+      catch (Exception e) {
+        return CANCEL;
+      }
+    }
+
+    public String toString() {
+      return super.toString().toLowerCase();
+    }
+  }
+
+  // Private methods
   private void parseFailureAsError(XmlPullParser parser) throws Exception {
     if (!"failure".equals(parser.getName())) {
       return;

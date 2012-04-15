@@ -3,23 +3,27 @@ package com.xetrix.xmpp.stanza;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.XMPPError;
-
+import com.xetrix.xmpp.payload.IQPayload;
 import com.xetrix.xmpp.util.StringUtils;
 
-public class XMPPStanzaIQ extends XMPPStanza {
-
+public class IQ extends Stanza {
   // IQ Stanza data
-  private Type type = Type.get;
+  private Type       type = Type.get;
+  private IQPayload  payload = null;
 
   // Constructors
-  public XMPPStanzaIQ() {}
-  public XMPPStanzaIQ(XMPPStanzaIQ iq) throws Exception {
+  public IQ() {}
+  public IQ(IQ iq) {
     super(iq);
     setType(iq.getType());
+    setPayload(iq.getPayload());
   }
-  public XMPPStanzaIQ(XmlPullParser parser) throws Exception {
-    parseStanza(parser);
-    parseStanzaIQ(parser);
+  public IQ(XmlPullParser parser) throws Exception {
+    parse(parser);
+  }
+  public IQ(Type t, IQPayload p) {
+    setType(t);
+    setPayload(p);
   }
 
   // Public methods
@@ -38,6 +42,16 @@ public class XMPPStanzaIQ extends XMPPStanza {
         setType(Type.fromString(t));
       }
     } catch (Exception e) {
+    }
+  }
+
+  public IQPayload getPayload() {
+    return payload;
+  }
+
+  public void setPayload(IQPayload p) {
+    if (p instanceof IQPayload || p == null) {
+      payload = p;
     }
   }
 
@@ -72,8 +86,8 @@ public class XMPPStanzaIQ extends XMPPStanza {
     return buf.toString();
   }
 
-  public XMPPStanzaIQ toErrorIQ(XMPPError e) throws Exception {
-    XMPPStanzaIQ iq = new XMPPStanzaIQ(this);
+  public IQ toErrorIQ(XMPPError e) throws Exception {
+    IQ iq = new IQ(this);
     iq.setFrom(getTo());
     iq.setTo(getFrom());
     iq.setType(Type.error);
@@ -82,14 +96,17 @@ public class XMPPStanzaIQ extends XMPPStanza {
   }
 
   public String getPayloadXML() {
+    if (payload instanceof IQPayload) {
+      return payload.toXML();
+    }
     return null;
   }
 
-  public final void parseStanzaIQ(XmlPullParser parser) throws Exception {
+  public void parse(XmlPullParser parser) throws Exception {
     if (!"iq".equals(parser.getName())) {
       return;
     }
-
+    super.parse(parser);
     setType(parser.getAttributeValue(null, "type"));
   }
 

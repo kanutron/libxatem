@@ -4,10 +4,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import com.xetrix.xmpp.client.XMPPClient;
-import com.xetrix.xmpp.client.XMPPClientListener;
+import com.xetrix.xmpp.client.Client;
+import com.xetrix.xmpp.client.ClientListener;
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
 
 public class XatemTest {
   // Constants
@@ -23,7 +22,7 @@ public class XatemTest {
   private String     server;
   private Integer    port;
   private Integer    socksec;
-  private XMPPClient xc;
+  private Client     xc;
 
   public XatemTest(String ac) {
     account = ac;
@@ -71,13 +70,13 @@ public class XatemTest {
   private void init() {
     Log.write("Initiating client: " + account, 6);
     if (this.resource!="") {
-      this.xc = new XMPPClient(this.username, this.password, this.resource, 24,
+      this.xc = new Client(this.username, this.password, this.resource, 24,
         this.server, this.port);
     } else {
-      this.xc = new XMPPClient(this.username, this.password);
+      this.xc = new Client(this.username, this.password);
     }
 
-    this.xc.setListener(new XMPPClientListener() {
+    this.xc.setListener(new ClientListener() {
       // Event Handlers
       public void onConnect() {
         Log.write(account + ": " + "Connected.",7);
@@ -109,8 +108,11 @@ public class XatemTest {
       public void onAuthenticated() {
         Log.write(account + ": " + "Authenticated",7);
       }
-      public void onResourceBinded(XMPPStanzaIQBind bind) {
+      public void onResourceBinded() {
         Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
+      }
+      public void onSessionStarted() {
+        Log.write(account + ": " + "Session started.",6);
         /*XMPPStanzaIQ iq = new XMPPStanzaIQ(XMPPStanzaIQ.Type.get) {
           public String getPayloadXML() {
             return "<query xmlns=\"jabber:iq:roster\"></query>";

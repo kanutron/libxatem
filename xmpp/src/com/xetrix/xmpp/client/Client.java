@@ -3,9 +3,10 @@ package com.xetrix.xmpp.client;
 import java.util.List;
 import java.io.IOException;
 
-import com.xetrix.xmpp.stanza.XMPPStanzaIQBind;
+import com.xetrix.xmpp.payload.Bind;
+import com.xetrix.xmpp.payload.Session;
 
-public class XMPPClient {
+public class Client {
   private static final String    CLIENT_NAME = "xatem";
 
   // Externally inmutable configuration
@@ -21,17 +22,18 @@ public class XMPPClient {
   private boolean               connected = false;
   private boolean               authenticated = false;
   private boolean               binded = false;
+  private boolean               sessionStarted = false;
 
   // XMPP Client components
-  protected XMPPSocket           socket = new XMPPSocket(this);
-  protected XMPPStream           stream = new XMPPStream(this);
-  protected XMPPAuth             auth;
+  protected Connection           socket = new Connection(this);
+  protected Stream               stream = new Stream(this);
+  protected Auth                 auth;
 
   // Event listeners
-  private XMPPClientListener     listener;
+  private ClientListener     listener;
 
   // Constructors
-  public XMPPClient(String u, String p, String r, Integer pr, String h, Integer prt, String s) {
+  public Client(String u, String p, String r, Integer pr, String h, Integer prt, String s) {
     username = u;
     password = p;
     resource = r;
@@ -41,7 +43,7 @@ public class XMPPClient {
     service = s;
   }
 
-  public XMPPClient(String u, String p, String r, Integer pr, String h, Integer prt) {
+  public Client(String u, String p, String r, Integer pr, String h, Integer prt) {
     username = u;
     password = p;
     resource = r;
@@ -55,7 +57,7 @@ public class XMPPClient {
     }
   }
 
-  public XMPPClient(String u, String p, String r, Integer pr) {
+  public Client(String u, String p, String r, Integer pr) {
     username = u;
     password = p;
     resource = r;
@@ -65,7 +67,7 @@ public class XMPPClient {
     service = host;
   }
 
-  public XMPPClient(String u, String p) {
+  public Client(String u, String p) {
     username = u;
     password = p;
     resource = CLIENT_NAME;
@@ -76,7 +78,7 @@ public class XMPPClient {
   }
 
   // Public methods
-  public void setListener(XMPPClientListener l) {
+  public void setListener(ClientListener l) {
     listener = l;
   }
 
@@ -128,10 +130,13 @@ public class XMPPClient {
   public boolean isBinded() {
     return binded;
   }
+  public boolean isSessionStarted() {
+    return sessionStarted;
+  }
 
   // Mehtods
-  public boolean connect(XMPPSocket.Security s) {
-    socket = new XMPPSocket(this);
+  public boolean connect(Connection.Security s) {
+    socket = new Connection(this);
     if (socket.setSecurity(s)) {
       if (socket.connect(host, port)) {
         connected = true;
@@ -144,19 +149,19 @@ public class XMPPClient {
 
   public boolean connect(Integer s) {
     switch (s) {
-      case 0: return connect(XMPPSocket.Security.none);
-      case 1: return connect(XMPPSocket.Security.ssl);
-      case 2: return connect(XMPPSocket.Security.tls);
+      case 0: return connect(Connection.Security.none);
+      case 1: return connect(Connection.Security.ssl);
+      case 2: return connect(Connection.Security.tls);
     }
     return false;
   }
 
   public boolean connect(String s) {
-    return connect(XMPPSocket.Security.fromString(s));
+    return connect(Connection.Security.fromString(s));
   }
 
   public boolean connect() {
-    return connect(XMPPSocket.Security.none);
+    return connect(Connection.Security.none);
   }
 
   public boolean disconnect() {
@@ -167,39 +172,39 @@ public class XMPPClient {
     authenticated = false;
     binded = false;
 
-    stream = new XMPPStream(this);
-    socket = new XMPPSocket(this);
+    stream = new Stream(this);
+    socket = new Connection(this);
 
     return true;
   }
 
   // Event Handlers
   void onConnect() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onConnect();
     }
   }
 
   void onDisconnect() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onDisconnect();
     }
   }
 
   void onSecurized() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onSecurized();
     }
   }
 
   void onCompressed() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onCompressed();
     }
   }
 
   void onConnectionError(XMPPError e) {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onConnectionError(e);
     }
     if (connected) {
@@ -216,13 +221,13 @@ public class XMPPClient {
     if (from != null) {
       service = from;
     }
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onStreamOpened(cid, from);
     }
   }
 
   void onStreamClosed() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onStreamClosed();
     }
     if (connected) {
@@ -231,7 +236,7 @@ public class XMPPClient {
   }
 
   void onStreamError(XMPPError e) {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onStreamError(e);
     }
     if (connected) {
@@ -242,22 +247,22 @@ public class XMPPClient {
   }
 
   void onReceiveSASLMechanisms(List<String> mechs) {
-    auth = new XMPPAuth(this);
+    auth = new Auth(this);
     auth.setServerMechanisms(mechs);
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onReceiveSASLMechanisms(mechs);
     }
   }
 
   void onReceiveCompressionMethods(List<String> methods) {
     socket.compressionSetServerMethods(methods);
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onReceiveCompressionMethods(methods);
     }
   }
 
   void onReadyforAuthentication() {
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onReadyforAuthentication();
     }
     String mech = auth.getBestMechanism();
@@ -273,19 +278,26 @@ public class XMPPClient {
   void onAuthenticated() {
     authenticated = true;
     auth = null;
-    if (listener instanceof XMPPClientListener) {
+    if (listener instanceof ClientListener) {
       listener.onAuthenticated();
     }
   }
 
-  void onResourceBinded(XMPPStanzaIQBind bind) {
+  void onResourceBinded(Bind bind) {
     binded = true;
     username = bind.getJid();
     if (bind.getResource() != null) {
       resource = bind.getResource();
     }
-    if (listener instanceof XMPPClientListener) {
-      listener.onResourceBinded(bind);
+    if (listener instanceof ClientListener) {
+      listener.onResourceBinded();
+    }
+  }
+
+  void onSessionStarted(Session session) {
+    sessionStarted = true;
+    if (listener instanceof ClientListener) {
+      listener.onSessionStarted();
     }
   }
 }

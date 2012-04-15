@@ -18,9 +18,9 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-public class XMPPSocket {
+public class Connection {
   private static final Integer SSL_HANDSHAKE_MAX_TIME = 5000; // Milliseconds
-  private XMPPClient client;
+  private Client client;
 
   private String          host;
   private Integer         port;
@@ -35,7 +35,7 @@ public class XMPPSocket {
   boolean                 compressed = false;
 
   // Constructors
-  public XMPPSocket(XMPPClient c) {
+  public Connection(Client c) {
     client = c;
   }
 
