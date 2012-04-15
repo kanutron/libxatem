@@ -64,7 +64,7 @@ public class Stream {
 
   void initStream() {
     StreamFeatures features = new StreamFeatures();
-    if (client.socket.isConnected()) {
+    if (client.conn.isConnected()) {
       connectionID = "";
       stanzaId = 0;
 
@@ -83,17 +83,18 @@ public class Stream {
     writeThread.interrupt();
     writeThread = new Thread();
 
-    if (client.socket.isConnected()) {
+    if (client.conn.isConnected()) {
       try {
-        client.socket.writer.write("</stream:stream>");
-        client.socket.writer.flush();
+        client.conn.writer.write("</stream:stream>");
+        client.conn.writer.flush();
       } catch (Exception e) {
       }
     }
   }
 
-  void startTLS() {
-    if (client.socket.enableTLS()) {
+  // Private methods
+  private void startTLS() {
+    if (client.conn.enableTLS()) {
       initStream();
     } else {
       client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
@@ -101,8 +102,8 @@ public class Stream {
     }
   }
 
-  void startCompression() {
-    if (client.socket.enableCompression()) {
+  private void startCompression() {
+    if (client.conn.enableCompression()) {
       initStream();
     } else {
       client.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
@@ -110,12 +111,11 @@ public class Stream {
     }
   }
 
-  // Private methods
   private void initParser() {
     try {
       parser = new MXParser();
       parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
-      parser.setInput(client.socket.reader);
+      parser.setInput(client.conn.reader);
     } catch (Exception e) {
       client.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
         "undefined-condition", "Parser does not initialize: " + e.getMessage()));
@@ -147,8 +147,8 @@ public class Stream {
     try {
       String stanza;
       while ((stanza = stanzaOutQueue.take()) != "") {
-        client.socket.writer.write(stanza);
-        client.socket.writer.flush();
+        client.conn.writer.write(stanza);
+        client.conn.writer.flush();
       }
     } catch (InterruptedException e) {
     } catch (Exception e) {
@@ -274,7 +274,7 @@ public class Stream {
 
   private boolean processFeatures() {
     if (features.tls && !client.isSecurized()) {
-      if (client.socket.getSecurity() == Connection.Security.tls) {
+      if (client.conn.getSecurity() == Connection.Security.tls) {
         pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
         return false;
       } else if (features.tlsRequired) {
@@ -293,10 +293,10 @@ public class Stream {
 
     if (features.compression && !client.isCompressed()) {
       client.onReceiveCompressionMethods(features.compMethods);
-      if (client.socket.getCompression() != Connection.Compression.none &&
-          !client.socket.compressed) {
+      if (client.conn.getCompression() != Connection.Compression.none &&
+          !client.conn.compressed) {
         pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
-                   "<method>" + client.socket.getCompression().toString() +
+                   "<method>" + client.conn.getCompression().toString() +
                    "</method></compress>");
       }
       return false;

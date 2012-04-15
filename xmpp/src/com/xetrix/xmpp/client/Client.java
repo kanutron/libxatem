@@ -30,7 +30,7 @@ public class Client {
   protected Auth                 auth;
 
   // Event listeners
-  private ClientListener     listener;
+  private ClientListener         listener;
 
   // Constructors
   public Client(String u, String p, String r, Integer pr, String h, Integer prt, String s) {
@@ -258,8 +258,8 @@ public class Client {
     conn.compressionSetServerMethods(methods);
     if (listener instanceof ClientListener) {
       listener.onReceiveCompressionMethods(methods);
-    }
   }
+    }
 
   void onReadyforAuthentication() {
     if (listener instanceof ClientListener) {
