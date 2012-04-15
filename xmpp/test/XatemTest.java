@@ -27,24 +27,14 @@ public class XatemTest implements ConnectionListener, StreamListener {
   private Integer    socksec;
   private Client     xc;
 
-  public XatemTest(String ac) {
+  public XatemTest(String ac, Properties prop) {
     account = ac;
-    try {
-      Properties prop = new Properties();
-      prop.load(new FileInputStream("test/" + ac + ".properties"));
-
-      username = prop.getProperty("username");
-      password = prop.getProperty("password");
-      resource = prop.getProperty("resource");
-      server   = prop.getProperty("host");
-      port     = Integer.parseInt(prop.getProperty("port"));
-      socksec  = Integer.parseInt(prop.getProperty("securitymode"));
-    }
-    catch (Exception e) {
-      Log.write("No properties file found for account " + ac + " (" + ac + ".properties)", 1);
-      account = "";
-      return;
-    }
+    username = prop.getProperty(ac + ".username");
+    password = prop.getProperty(ac + ".password");
+    resource = prop.getProperty(ac + ".resource");
+    server   = prop.getProperty(ac + ".host");
+    port     = Integer.parseInt(prop.getProperty(ac + ".port"));
+    socksec  = Integer.parseInt(prop.getProperty(ac + ".securitymode"));
   }
 
   public void start() {
@@ -147,30 +137,29 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public static void main(String args[]) {
-    Thread t1 = new Thread() {
-      public void run() {
-        XatemTest x = new XatemTest("gtalk");
-        x.start();
-      }
-    };
-    Thread t2 = new Thread() {
-      public void run() {
-        XatemTest x = new XatemTest("facebook");
-        x.start();
-      }
-    };
-    Thread t3 = new Thread() {
-      public void run() {
-        XatemTest x = new XatemTest("jabber");
-        x.start();
-      }
-    };
+    final Properties prop = new Properties();
+    try {
+      prop.load(new FileInputStream("test/xatemtester.properties"));
+    } catch (Exception e) {
+      Log.write("No properties file found for account test/xatemtester.properties", 1);
+      return;
+    }
 
-    t1.setName("XatemTesterGtalk");
-    t1.start();
-    t2.setName("XatemTesterFacebook");
-    t2.start();
-    t3.setName("XatemTesterJabber");
-    t3.start();
+    String a = prop.getProperty("accounts");
+    final String[] accounts = a.split(",", 10);
+
+    Thread[] threads = new Thread[accounts.length];
+
+    for (int i=0; i<accounts.length; i++) {
+      final String account = accounts[i];
+      threads[i] = new Thread() {
+        public void run() {
+          XatemTest x = new XatemTest(account, prop);
+          x.start();
+        }
+      };
+      threads[i].setName("XatemTester-" + accounts[i]);
+      threads[i].start();
+    }
   }
 }

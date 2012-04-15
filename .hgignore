@@ -2,6 +2,4 @@
 /doc
 /tmp
 /bin
-xmpp/test/gtalk.properties
-xmpp/test/facebook.properties
-xmpp/test/jabber.properties
+xmpp/test/xatemtester.properties
