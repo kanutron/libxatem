@@ -59,11 +59,9 @@
              destdir="${doc}"
              author="true"
              version="true"
-             use="true"
              windowtitle="${xmppname}"
              doctitle="${xmppname}"
-             bottom="${xmppname}"
-             stylesheetfile="${doc}/javadoc_stylesheet.css"/>
+             bottom="${xmppname}"/>
   </target>
 
   <!-- Test -->
