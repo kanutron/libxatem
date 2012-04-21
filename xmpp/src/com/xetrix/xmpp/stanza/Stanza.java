@@ -95,9 +95,7 @@ public abstract class Stanza implements Parseable {
     setFrom(parser.getAttributeValue(null, "from"));
     setTo(parser.getAttributeValue(null, "to"));
     setLang(getLanguageAttribute(parser));
-    if (parser.getNamespace(null) != null) {
-      setXmlns(parser.getNamespace(null));
-    }
+    setXmlns(parser.getNamespace(null));
   }
 
   public static String getLanguageAttribute(XmlPullParser parser) {

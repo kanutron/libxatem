@@ -20,19 +20,8 @@ public class Session extends IQPayload implements Parseable {
   }
 
   public void parse(XmlPullParser parser) throws Exception {
-    if (!"session".equals(parser.getName())) {
-      return;
-    }
-    while (true) {
-      int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        // do nothing
-      } else if (eventType == XmlPullParser.END_TAG) {
-        if (parser.getName().equals("session")) {
-          return;
-        }
-      }
-    }
+    // nothing to parse
+    return;
   }
 
 }

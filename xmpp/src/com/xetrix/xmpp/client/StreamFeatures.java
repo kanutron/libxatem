@@ -12,7 +12,6 @@ public class StreamFeatures implements Parseable {
   public boolean bind = false;
   public boolean bindRequired = false;
   public boolean session = false;
-  public boolean sessionRequired = false;
   public boolean register = false;
   public List<String> saslMechs = new ArrayList<String>();
   public List<String> compMethods = new ArrayList<String>();
@@ -103,7 +102,6 @@ public class StreamFeatures implements Parseable {
   }
 
   private void parseBind(XmlPullParser parser) throws Exception {
-    bind = true;
     while (true) {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {
@@ -112,6 +110,7 @@ public class StreamFeatures implements Parseable {
           bindRequired = true;
         }
       } else if (eventType == XmlPullParser.END_TAG) {
+        bind = true;
         if (parser.getName().equals("bind")) {
           return;
         }
@@ -120,16 +119,11 @@ public class StreamFeatures implements Parseable {
   }
 
   private void parseSession(XmlPullParser parser) throws Exception {
-    session = true;
     while (true) {
       int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        String elementName = parser.getName();
-        if (elementName.equals("required")) {
-          sessionRequired = true;
-        }
-      } else if (eventType == XmlPullParser.END_TAG) {
+      if (eventType == XmlPullParser.END_TAG) {
         if (parser.getName().equals("session")) {
+          session = true;
           return;
         }
       }

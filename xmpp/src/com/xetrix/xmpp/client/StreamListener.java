@@ -10,7 +10,7 @@ public interface StreamListener {
   public void onStreamError(XMPPError e);
 
   public void onAuthenticated();
-  public void onReadyForBindResource();
+  public void onReadyForBindResource(Boolean required);
   public void onResourceBinded(Bind bind);
   public void onReadyForStartSession();
   public void onSessionStarted(Session session);

@@ -12,19 +12,19 @@ import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
 public class StandardStream implements Stream {
-  Connection                      conn;
-  Auth                            auth;
-  StreamListener                  listener;
-  StreamFeatures                  features = new StreamFeatures();
+  Connection                    conn;
+  Auth                          auth;
+  StreamListener                listener;
+  StreamFeatures                features = new StreamFeatures();
 
   // Life cycle control
   private boolean               opened = false;
   private boolean               binded = false;
   private boolean               sessionStarted = false;
 
-  private String                 streamId = "";
-  private String                 streamFrom = "";
-  private Integer                stanzaId = 0;
+  private String                streamId = "";
+  private String                streamFrom = "";
+  private Integer               stanzaId = 0;
 
   // XML Parser
   private XmlPullParser parser;
@@ -360,11 +360,14 @@ public class StandardStream implements Stream {
     }
 
     if (features.bind) {
-      listener.onReadyForBindResource();
+      listener.onReadyForBindResource(features.bindRequired);
     }
 
     if (features.session) {
       listener.onReadyForStartSession();
+    } else {
+      // Does not support session. Assume opened.
+      listener.onSessionStarted(new Session());
     }
 
     return false;

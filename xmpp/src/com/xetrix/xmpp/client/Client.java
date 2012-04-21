@@ -250,11 +250,11 @@ public class Client implements ConnectionListener, StreamListener {
     }
   }
 
-  public void onReadyForBindResource() {
+  public void onReadyForBindResource(Boolean required) {
     if (streamListener instanceof StreamListener) {
-      streamListener.onReadyForBindResource();
+      streamListener.onReadyForBindResource(required);
     }
-    if (!isBinded()) {
+    if (!isBinded() && required) {
       // TODO: set IQ handler by ID
       IQ iqb = new IQ(IQ.Type.set, new Bind(getFullJid()));
       stream.pushStanza(iqb);

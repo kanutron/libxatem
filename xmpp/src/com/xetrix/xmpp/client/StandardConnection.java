@@ -27,8 +27,8 @@ public class StandardConnection implements Connection {
   private Integer         port;
   private Security        security = Security.none;
   private Compression     compression = Compression.none;
-  private boolean        securized = false;
-  private boolean        compressed = false;
+  private boolean         securized = false;
+  private boolean         compressed = false;
 
   private Socket          socket;
   private Reader          reader;

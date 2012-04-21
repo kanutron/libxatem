@@ -97,7 +97,7 @@ public class XatemTest implements ConnectionListener, StreamListener {
     Log.write(account + ": " + "Stream opened; from: " + from,7);
   }
 
-  public void onReadyForBindResource() {
+  public void onReadyForBindResource(Boolean required) {
     Log.write(account + ": " + "Ready to bind.",6);
   }
 
