@@ -1,5 +1,7 @@
 package com.xetrix.xmpp.client;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -12,10 +14,12 @@ import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
 public class StandardStream implements Stream {
-  Connection                    conn;
-  Auth                          auth;
-  StreamListener                listener;
-  StreamFeatures                features = new StreamFeatures();
+  private Connection            conn;
+  private Auth                  auth;
+  private StreamListener        listener;
+
+  // Stanza Handlers
+  private List<StanzaHandler>   handlers = new CopyOnWriteArrayList<StanzaHandler>();
 
   // Life cycle control
   private boolean               opened = false;
@@ -45,8 +49,16 @@ public class StandardStream implements Stream {
     auth = a;
   }
 
+  public Auth getAuth() {
+    return auth;
+  }
+
   public void setConnection(Connection c) {
     conn = c;
+  }
+
+  public Connection getConnection() {
+    return conn;
   }
 
   public void setListener(StreamListener l) {
@@ -95,7 +107,6 @@ public class StandardStream implements Stream {
   }
 
   public void initStream(String service) {
-    StreamFeatures features = new StreamFeatures();
     streamId = "";
     stanzaId = 0;
     streamFrom = service;
@@ -106,6 +117,15 @@ public class StandardStream implements Stream {
     pushStanza("<stream:stream to=\"" + streamFrom +
       "\" xmlns:stream=\"http://etherx.jabber.org/streams\" " +
       "xmlns=\"jabber:client\" version=\"1.0\">");
+  }
+
+  public void initStream() {
+    if (streamFrom.equals("")) {
+      listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
+        "Can't open a stream without knowing the service name."));
+    } else {
+      initStream(streamFrom);
+    }
   }
 
   public void finishStream() {
@@ -130,28 +150,6 @@ public class StandardStream implements Stream {
   }
 
   // Private methods
-  private void initStream() {
-    initStream(streamFrom);
-  }
-
-  private void startTLS() {
-    if (conn.enableTLS()) {
-      initStream();
-    } else {
-      listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
-        "Start TLS failed."));
-    }
-  }
-
-  private void startCompression() {
-    if (conn.enableCompression()) {
-      initStream();
-    } else {
-      listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
-        "Start compression failed."));
-    }
-  }
-
   private void initParser() {
     try {
       parser = new MXParser();
@@ -198,50 +196,32 @@ public class StandardStream implements Stream {
     }
   }
 
-  // Parsers
   private void parseStanzas(Thread thread) {
+    handlers.clear();
+    handlers.add(new StreamNegotiationHandler());
+
     try {
       int eventType = parser.getEventType();
       do {
         if (eventType == XmlPullParser.START_TAG) {
-          if (parser.getName().equals("presence")) {
-            // TODO:
-          } else if (parser.getName().equals("iq")) {
-            parseIQ(parser);
-          } else if (parser.getName().equals("message")) {
-            // TODO
-          } else if (parser.getName().equals("features")) {
-            features.parse(parser);
-            if (processFeatures()) {
-              return;
-            }
-          } else if (parser.getName().equals("proceed")) {
-            startTLS();
-            return;
-          } else if (parser.getName().equals("compressed")) {
-            startCompression();
-            return;
-          } else if (parser.getName().equals("challenge")) {
-            String response = auth.processChallenge(parser.nextText());
-            if (!"".equals(response)) {
-              pushStanza(response);
-            } else {
-              listener.onStreamError(auth.getError());
-            }
-          } else if (parser.getName().equals("success")) {
-            if ("urn:ietf:params:xml:ns:xmpp-sasl".equals(parser.getNamespace(null))) {
-              if (auth.processSuccess()) {
-                listener.onAuthenticated();
-                initStream();
-                return;
-              } else {
-                listener.onStreamError(auth.getError());
+
+          for (StanzaHandler h: handlers) {
+            if (h.wantsStanza(parser)) {
+              if (!h.handleStanza(this, parser)) {
+                return; // Either error handling or stream reset needed
+              } else if (h.hasStanza()) {
+                Stanza s = h.getStanza();
+                // TODO: Send stanza to interested parties
+              }
+              if (h.finished()) {
+                //handlers.remove(h);
               }
             }
+          }
+
+          if (parser.getName().equals("iq")) {
+            parseIQ(parser);
           } else if (parser.getName().equals("error")) {
-            listener.onStreamError(new XMPPError(parser));
-            return;
-          } else if (parser.getName().equals("failure")) {
             listener.onStreamError(new XMPPError(parser));
             return;
           } else if (parser.getName().equals("stream")) {
@@ -271,7 +251,8 @@ public class StandardStream implements Stream {
     }
   }
 
-  private void parseIQ(XmlPullParser parser) throws Exception {
+
+  public void parseIQ(XmlPullParser parser) throws Exception {
     IQ iq = new IQ(parser);
 
     boolean done = false;
@@ -290,7 +271,7 @@ public class StandardStream implements Stream {
           return;
         } else if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
           iq.setPayload(new Session(parser));
-          sessionStarted = true;// TODO: check if type==result
+          sessionStarted = true; // TODO: check if type==result
           listener.onSessionStarted((Session)iq.getPayload());
           return;
         } else if (e.equals("query") && n.equals("jabber:iq:roster")) {
@@ -322,54 +303,5 @@ public class StandardStream implements Stream {
     return;
   }
 
-  private boolean processFeatures() {
-    if (features.tls && !conn.isSecurized()) {
-      if (conn.getSecurity() == Connection.Security.tls) {
-        pushStanza("<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>");
-        return false;
-      } else if (features.tlsRequired) {
-        // We cannot request TLS but we should
-        listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "not-allowed",
-          "TLS required by server but not allowed by this actual client settings."));
-        return true;
-      }
-    }
 
-    if (!isAuthed()) {
-      if (auth.setServerMechanisms(features.saslMechs)) {
-        String s = auth.startAuthWith(auth.getBestMechanism());
-        if (!"".equals(s)) {
-          pushStanza(s);
-          return false;
-        } else {
-          listener.onStreamError(auth.getError());
-          return true;
-        }
-      } else {
-        listener.onStreamError(auth.getError());
-        return true;
-      }
-    }
-
-    if (features.compression && !conn.isCompressed()) {
-      if (conn.compressionSetServerMethods(features.compMethods)) {
-        pushStanza("<compress xmlns='http://jabber.org/protocol/compress'>" +
-                   "<method>" + conn.getCompression().toString() + "</method></compress>");
-        return false;
-      }
-    }
-
-    if (features.bind) {
-      listener.onReadyForBindResource(features.bindRequired);
-    }
-
-    if (features.session) {
-      listener.onReadyForStartSession();
-    } else {
-      // Does not support session. Assume opened.
-      listener.onSessionStarted(new Session());
-    }
-
-    return false;
-  }
 }

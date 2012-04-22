@@ -99,6 +99,8 @@ public class XatemTest implements ConnectionListener, StreamListener {
 
   public void onReadyForBindResource(Boolean required) {
     Log.write(account + ": " + "Ready to bind.",6);
+    IQ iqb = new IQ(IQ.Type.set, new Bind(xc.getFullJid()));
+    xc.pushStanza(iqb);
   }
 
   public void onResourceBinded(Bind bind) {

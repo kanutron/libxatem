@@ -75,10 +75,7 @@ public class StandardAuth implements Auth {
 
   public List<String> getAvailableMechanisms() {
     List<String> mechs = new ArrayList<String>();
-    // We iterate trough client mechs because we assume they are sortered by strongest first
-    Iterator itr = clientMechs.iterator();
-    while(itr.hasNext()) {
-      Object m = itr.next();
+    for (String m : clientMechs) {
       if (serverMechs.contains(m)) {
         mechs.add((String)m);
       }
@@ -87,12 +84,9 @@ public class StandardAuth implements Auth {
   }
 
   public String getBestMechanism() {
-    // We iterate trough client mechs because we assume they are sortered by strongest first
-    Iterator itr = clientMechs.iterator();
-    while(itr.hasNext()) {
-      Object m = itr.next();
+    for (String m : clientMechs) {
       if (serverMechs.contains(m)) {
-        return (String)m;
+        return m;
       }
     }
     return "";
