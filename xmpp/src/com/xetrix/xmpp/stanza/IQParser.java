@@ -1,13 +1,18 @@
 package com.xetrix.xmpp.stanza;
 
+import java.util.List;
+import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.xmlpull.v1.XmlPullParser;
+
 import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.payload.PayloadParser;
-import com.xetrix.xmpp.payload.Bind; // TO BE REMOVED
-import com.xetrix.xmpp.payload.Session; // TO BE REMOVED
 
 public class IQParser implements StanzaParser {
+  private List<PayloadParser> payloadParsers = new CopyOnWriteArrayList<PayloadParser>();
+
   private boolean hasStanza = false;
   private Stanza stanza = null;
 
@@ -59,26 +64,47 @@ public class IQParser implements StanzaParser {
     return false;
   }
 
+  public void addPayloadParser(PayloadParser p) {
+    payloadParsers.add(p);
+  }
+
+  public void removePayloadParser(PayloadParser p) {
+    payloadParsers.remove(p);
+  }
+
+  public void clearPayloadParsers() {
+    payloadParsers.clear();
+  }
+
   // Private methods
 
   private Stanza parseIQ(XmlPullParser parser) throws Exception {
+    Iterator itr;
     IQ iq = new IQ(parser);
-
     boolean done = false;
+
     while (!done) {
       int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        String e = parser.getName();
-        String n = parser.getNamespace();
 
-        // IQ Payload
-        // TODO User payloadparsers!
-        if (e.equals("error")) {
+      if (eventType == XmlPullParser.START_TAG) {
+        if (parser.getName().equals("error")) {
           iq.setError(new XMPPError(parser));
-        } else if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
-          iq.setPayload(new Bind(parser));
-        } else if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
-          iq.setPayload(new Session(parser));
+        } else {
+          itr = payloadParsers.iterator();
+          while(itr.hasNext()) {
+            PayloadParser p = (PayloadParser)itr.next();
+            if (p.wantsPayload(parser)) {
+              if (!p.parsePayload(parser)) {
+                break;
+              } else if (p.hasPayload()) {
+                iq.setPayload(p.getPayload());
+              }
+              if (p.finished()) {
+                removePayloadParser(p);
+              }
+              break; // Only first parser can process
+            }
+          }
         }
       } else if (eventType == XmlPullParser.END_TAG) {
         String e = parser.getName();
@@ -90,18 +116,4 @@ public class IQParser implements StanzaParser {
     }
     return iq;
   }
-
-  /*
-    // TODO: if IQ error, notify listener (continue)
-
-    // If here, the IQ was unhandled.
-    if (iq.getType() == IQ.Type.get || iq.getType() == IQ.Type.set) {
-      IQ eiq = iq.toErrorIQ(
-        new XMPPError(XMPPError.Type.CANCEL, "feature-not-implemented"));
-      pushStanza(eiq);
-      return;
-    } else {
-      // TODO: Unhandled ERROR or RESULT IQ received.
-    }
-  */
 }

@@ -12,6 +12,7 @@ import org.xmlpull.v1.XmlPullParser;
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.StanzaParser;
 import com.xetrix.xmpp.stanza.StanzaListener;
+import com.xetrix.xmpp.stanza.IQ;
 
 public class StandardStream implements Stream {
   private Connection            conn;
@@ -322,22 +323,28 @@ public class StandardStream implements Stream {
   }
 
   private void publishIncomingStanzas() {
+    Stanza stanza;
+    boolean handled;
     try {
-      Stanza stanza;
       while ((stanza = stanzaInQueue.take()) != null) {
         //System.out.println("Incoming: " + stanza.toXML());
         Iterator itr;
         itr = stanzaInListeners.iterator();
+        handled = false;
         while(itr.hasNext()) {
           StanzaListener l = (StanzaListener)itr.next();
           if (l.wantsStanza(stanza)) {
+            handled = true;
+            if (l.finished()) {
+              removeStanzaInListener(l);
+            }
             if (l.processStanza(stanza)) {
-              if (l.finished()) {
-                removeStanzaInListener(l);
-              }
               break;
             }
           }
+        }
+        if (!handled) {
+          processUnhandledStanza(stanza);
         }
       }
     } catch (InterruptedException e) {
@@ -360,6 +367,23 @@ public class StandardStream implements Stream {
         if (l.finished()) {
           removeStanzaOutListener(l);
         }
+      }
+    }
+  }
+
+  private void processUnhandledStanza(Stanza s) {
+    // Process unhandled IQs
+    if (s.getName().equals("iq")) {
+      IQ iq = new IQ((IQ)s);
+      if (iq.getType() == IQ.Type.get || iq.getType() == IQ.Type.set) {
+        IQ eiq = iq.toErrorIQ(
+          new XMPPError(XMPPError.Type.CONTINUE, "feature-not-implemented"));
+        pushStanza(eiq);
+      } else if (iq.getType() == IQ.Type.error) {
+        listener.onStreamError(iq.getError());
+      } else {
+        listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "feature-not-implemented",
+          "IQ type=result received, but no body intersted. XML=" + iq.toXML()));
       }
     }
   }

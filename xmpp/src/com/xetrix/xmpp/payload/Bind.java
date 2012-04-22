@@ -59,9 +59,6 @@ public class Bind extends Payload implements Parseable {
   }
 
   public void parse(XmlPullParser parser) throws Exception {
-    if (!"bind".equals(parser.getName())) {
-      return;
-    }
     while (true) {
       int eventType = parser.next();
       if (eventType == XmlPullParser.START_TAG) {

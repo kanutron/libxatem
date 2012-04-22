@@ -96,7 +96,7 @@ public class IQ extends Stanza {
     return buf.toString();
   }
 
-  public IQ toErrorIQ(XMPPError e) throws Exception {
+  public IQ toErrorIQ(XMPPError e) {
     IQ iq = new IQ(this);
     iq.setFrom(getTo());
     iq.setTo(getFrom());
@@ -113,9 +113,6 @@ public class IQ extends Stanza {
   }
 
   public void parse(XmlPullParser parser) throws Exception {
-    if (!"iq".equals(parser.getName())) {
-      return;
-    }
     super.parse(parser);
     setType(parser.getAttributeValue(null, "type"));
   }

@@ -5,12 +5,14 @@ import java.io.IOException;
 
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.IQParser;
 import com.xetrix.xmpp.stanza.StreamErrorParser;
 import com.xetrix.xmpp.stanza.StreamConfigParser;
-import com.xetrix.xmpp.stanza.IQParser;
 import com.xetrix.xmpp.stanza.IQByIdListener;
 import com.xetrix.xmpp.payload.Bind;
+import com.xetrix.xmpp.payload.BindParser;
 import com.xetrix.xmpp.payload.Session;
+import com.xetrix.xmpp.payload.SessionParser;
 
 public class Client implements ConnectionListener, StreamListener {
   private static final String    CLIENT_NAME = "xatem";
@@ -221,7 +223,8 @@ public class Client implements ConnectionListener, StreamListener {
     stream.addStanzaParser(new StreamErrorParser());
     iqParser = new IQParser();
     stream.addStanzaParser(iqParser);
-    //iqHandler.addPayloadHandler();
+    iqParser.addPayloadParser(new BindParser());
+    iqParser.addPayloadParser(new SessionParser());
     stream.initStream(service);
     if (connectionListener instanceof ConnectionListener) {
       connectionListener.onConnect();

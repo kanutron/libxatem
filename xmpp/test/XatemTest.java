@@ -78,7 +78,7 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onDisconnect() {
-    Log.write(account + ": " + "Disconnected.",6);
+    Log.write(account + ": " + "Disconnected.",3);
   }
 
   public void onSecurized() {
@@ -90,7 +90,11 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onConnectionError(XMPPError e) {
-    Log.write(account + ": Conn: " + e.toString(),3);
+    if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
+      Log.write(account + ": Conn: " + e.toString(),3);
+    } else {
+      Log.write(account + ": Conn: " + e.toString(),5);
+    }
   }
 
   public void onStreamOpened(String from) {
@@ -98,15 +102,15 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onBindRequested(Boolean required) {
-    Log.write(account + ": " + "Bind requested.",6);
+    Log.write(account + ": " + "Bind requested.",7);
   }
 
   public void onSessionRequested() {
-    Log.write(account + ": " + "Session requested.",6);
+    Log.write(account + ": " + "Session requested.",7);
   }
 
   public void onResourceBinded(String j, String r) {
-    Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
+    Log.write(account + ": " + "Binded as " + xc.getFullJid(),7);
   }
 
   public void onSessionStarted() {
@@ -128,11 +132,15 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void onStreamError(XMPPError e) {
-    Log.write(account + ": Stream: " + e.toString(),3);
+    if (e.getType() == XMPPError.Type.AUTH || e.getType() == XMPPError.Type.CANCEL) {
+      Log.write(account + ": Stream: " + e.toString(),3);
+    } else {
+      Log.write(account + ": Stream: " + e.toString(),5);
+    }
   }
 
   public void onAuthenticated() {
-    Log.write(account + ": " + "Authenticated",7);
+    Log.write(account + ": " + "Authenticated",6);
   }
 
   // ////////////////////////////////////////////////
