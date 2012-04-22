@@ -9,7 +9,7 @@ import com.xetrix.xmpp.client.StreamListener;
 import com.xetrix.xmpp.client.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.IQ;
-import com.xetrix.xmpp.payload.IQPayload;
+import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
@@ -99,22 +99,20 @@ public class XatemTest implements ConnectionListener, StreamListener {
 
   public void onBindRequested(Boolean required) {
     Log.write(account + ": " + "Bind requested.",6);
-    IQ iqb = new IQ(IQ.Type.set, new Bind(xc.getFullJid()));
-    xc.pushStanza(iqb);
   }
 
   public void onSessionRequested() {
     Log.write(account + ": " + "Session requested.",6);
   }
 
-  public void onResourceBinded(Bind bind) {
+  public void onResourceBinded(String j, String r) {
     Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
   }
 
-  public void onSessionStarted(Session session) {
+  public void onSessionStarted() {
     Log.write(account + ": " + "Session started.",6);
     // DEBUG
-    IQ iq = new IQ(IQ.Type.get, new IQPayload() {
+    IQ iq = new IQ(IQ.Type.get, new Payload() {
       public String toXML() {
         return "<query xmlns=\"jabber:iq:roster\"></query>";
       };

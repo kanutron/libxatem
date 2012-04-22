@@ -3,7 +3,7 @@ package com.xetrix.xmpp.payload;
 import com.xetrix.xmpp.Parseable;
 import org.xmlpull.v1.XmlPullParser;
 
-public class Session extends IQPayload implements Parseable {
+public class Session extends Payload implements Parseable {
   // Constructors
   public Session() {}
   public Session(XmlPullParser parser) throws Exception {

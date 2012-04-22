@@ -13,6 +13,7 @@ public abstract class Stanza implements Parseable {
 
   // Common Stanza data
   private String     xmlns = DEFAULT_XMLNS;
+  private String     name = null;
   private String     id = null;
   private String     from = null;
   private String     to = null;
@@ -26,6 +27,7 @@ public abstract class Stanza implements Parseable {
   }
   public Stanza(Stanza stanza) {
     setXmlns(stanza.getXmlns());
+    setName(stanza.getName());
     setId(stanza.getId());
     setFrom(stanza.getFrom());
     setTo(stanza.getTo());
@@ -46,6 +48,14 @@ public abstract class Stanza implements Parseable {
     if (ns != null) {
       xmlns = ns;
     }
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String n) {
+    name = n;
   }
 
   public String getId() {
@@ -91,6 +101,7 @@ public abstract class Stanza implements Parseable {
   }
 
   public void parse(XmlPullParser parser) throws Exception {
+    setName(parser.getName());
     setId(parser.getAttributeValue(null, "id"));
     setFrom(parser.getAttributeValue(null, "from"));
     setTo(parser.getAttributeValue(null, "to"));

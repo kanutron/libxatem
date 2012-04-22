@@ -4,17 +4,19 @@ import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.client.Stream;
-import com.xetrix.xmpp.payload.IQPayload;
+import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.util.StringUtils;
 
 public class IQ extends Stanza {
   // IQ Stanza data
   private Type       type = Type.get;
-  private IQPayload  payload = null;
+  private Payload  payload = null;
   private boolean    hasPayload = false;
 
   // Constructors
-  public IQ() {}
+  public IQ() {
+    setName("iq");
+  }
   public IQ(IQ iq) {
     super(iq);
     setType(iq.getType());
@@ -23,7 +25,8 @@ public class IQ extends Stanza {
   public IQ(XmlPullParser parser) throws Exception {
     parse(parser);
   }
-  public IQ(Type t, IQPayload p) {
+  public IQ(Type t, Payload p) {
+    setName("iq");
     setType(t);
     setPayload(p);
   }
@@ -47,12 +50,12 @@ public class IQ extends Stanza {
     }
   }
 
-  public IQPayload getPayload() {
+  public Payload getPayload() {
     return payload;
   }
 
-  public void setPayload(IQPayload p) {
-    if (p instanceof IQPayload || p == null) {
+  public void setPayload(Payload p) {
+    if (p instanceof Payload || p == null) {
       payload = p;
       hasPayload = true;
     }
@@ -103,7 +106,7 @@ public class IQ extends Stanza {
   }
 
   public String getPayloadXML() {
-    if (payload instanceof IQPayload) {
+    if (payload instanceof Payload) {
       return payload.toXML();
     }
     return null;

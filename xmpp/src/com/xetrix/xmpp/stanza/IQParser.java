@@ -3,11 +3,11 @@ package com.xetrix.xmpp.stanza;
 import org.xmlpull.v1.XmlPullParser;
 import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.payload.PayloadParser;
 import com.xetrix.xmpp.payload.Bind; // TO BE REMOVED
 import com.xetrix.xmpp.payload.Session; // TO BE REMOVED
 
-public class IQStanzaHandler implements StanzaHandler {
+public class IQParser implements StanzaParser {
   private boolean hasStanza = false;
   private Stanza stanza = null;
 
@@ -32,7 +32,7 @@ public class IQStanzaHandler implements StanzaHandler {
     return false;
   }
 
-  public boolean handleStanza(Stream stream, XmlPullParser parser) throws Exception {
+  public boolean parseStanza(Stream stream, XmlPullParser parser) throws Exception {
     hasStanza = false;
     stanza = null;
 
@@ -61,7 +61,7 @@ public class IQStanzaHandler implements StanzaHandler {
 
   // Private methods
 
-  public Stanza parseIQ(XmlPullParser parser) throws Exception {
+  private Stanza parseIQ(XmlPullParser parser) throws Exception {
     IQ iq = new IQ(parser);
 
     boolean done = false;
@@ -72,6 +72,7 @@ public class IQStanzaHandler implements StanzaHandler {
         String n = parser.getNamespace();
 
         // IQ Payload
+        // TODO User payloadparsers!
         if (e.equals("error")) {
           iq.setError(new XMPPError(parser));
         } else if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
@@ -90,10 +91,7 @@ public class IQStanzaHandler implements StanzaHandler {
     return iq;
   }
 
-
-
   /*
-
     // TODO: if IQ error, notify listener (continue)
 
     // If here, the IQ was unhandled.

@@ -12,7 +12,7 @@ import com.xetrix.xmpp.client.Connection;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.payload.Session;
 
-public class StreamNegotiationHandler implements StanzaHandler {
+public class StreamConfigParser implements StanzaParser {
   private boolean finished = false;
   private boolean compression = false;
   private boolean tls = false;
@@ -67,7 +67,7 @@ public class StreamNegotiationHandler implements StanzaHandler {
     return false;
   }
 
-  public boolean handleStanza(Stream stream, XmlPullParser parser) throws Exception {
+  public boolean parseStanza(Stream stream, XmlPullParser parser) throws Exception {
     StreamListener l;
 
     // Stream Features

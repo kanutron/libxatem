@@ -6,7 +6,7 @@ import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.StreamListener;
 import com.xetrix.xmpp.client.XMPPError;
 
-public class StreamErrorHandler implements StanzaHandler {
+public class StreamErrorParser implements StanzaParser {
   private String e = "";
   private String n = "";
 
@@ -28,7 +28,7 @@ public class StreamErrorHandler implements StanzaHandler {
     return false;
   }
 
-  public boolean handleStanza(Stream stream, XmlPullParser parser) throws Exception {
+  public boolean parseStanza(Stream stream, XmlPullParser parser) throws Exception {
     if (n.equals("http://etherx.jabber.org/streams") &&
         e.equals("error")) {
       StreamListener l = stream.getListener();

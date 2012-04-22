@@ -5,9 +5,10 @@ import java.io.IOException;
 
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
-import com.xetrix.xmpp.stanza.StreamErrorHandler;
-import com.xetrix.xmpp.stanza.StreamNegotiationHandler;
-import com.xetrix.xmpp.stanza.IQStanzaHandler;
+import com.xetrix.xmpp.stanza.StreamErrorParser;
+import com.xetrix.xmpp.stanza.StreamConfigParser;
+import com.xetrix.xmpp.stanza.IQParser;
+import com.xetrix.xmpp.stanza.IQByIdListener;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
@@ -31,6 +32,12 @@ public class Client implements ConnectionListener, StreamListener {
   // Event listeners
   private ConnectionListener     connectionListener;
   private StreamListener         streamListener;
+
+  // Parsers
+  private IQParser               iqParser;
+
+  // Session
+  private boolean                sessionRequested = false;
 
   // Constructors
   public Client() {
@@ -209,10 +216,12 @@ public class Client implements ConnectionListener, StreamListener {
 
   // Event Handlers
   public void onConnect() {
-    stream.clearStanzaHandlers();
-    stream.addStanzaHandler(new StreamNegotiationHandler());
-    stream.addStanzaHandler(new StreamErrorHandler());
-    stream.addStanzaHandler(new IQStanzaHandler());
+    stream.clearStanzaParsers();
+    stream.addStanzaParser(new StreamConfigParser());
+    stream.addStanzaParser(new StreamErrorParser());
+    iqParser = new IQParser();
+    stream.addStanzaParser(iqParser);
+    //iqHandler.addPayloadHandler();
     stream.initStream(service);
     if (connectionListener instanceof ConnectionListener) {
       connectionListener.onConnect();
@@ -261,37 +270,31 @@ public class Client implements ConnectionListener, StreamListener {
     if (streamListener instanceof StreamListener) {
       streamListener.onBindRequested(required);
     }
-    if (!isBinded() && required) {
-      // TODO: set IQ handler by ID
-      IQ iqb = new IQ(IQ.Type.set, new Bind(getFullJid()));
-      stream.pushStanza(iqb);
+    if (!isBinded()) {
+      startBindingAndSession();
     }
   }
 
   public void onSessionRequested() {
+    sessionRequested = true;
     if (streamListener instanceof StreamListener) {
       streamListener.onSessionRequested();
     }
-    if (!isSessionStarted()) {
-      // TODO: set IQ handler by ID
-      IQ iqs = new IQ(IQ.Type.set, new Session());
-      stream.pushStanza(iqs);
+  }
+
+  public void onResourceBinded(String j, String r) {
+    username = j;
+    if (r != null) {
+      resource = r;
+    }
+    if (streamListener instanceof StreamListener) {
+      streamListener.onResourceBinded(j, r);
     }
   }
 
-  public void onResourceBinded(Bind bind) {
-    username = bind.getJid();
-    if (bind.getResource() != null) {
-      resource = bind.getResource();
-    }
+  public void onSessionStarted() {
     if (streamListener instanceof StreamListener) {
-      streamListener.onResourceBinded(bind);
-    }
-  }
-
-  public void onSessionStarted(Session session) {
-    if (streamListener instanceof StreamListener) {
-      streamListener.onSessionStarted(session);
+      streamListener.onSessionStarted();
     }
   }
 
@@ -319,5 +322,37 @@ public class Client implements ConnectionListener, StreamListener {
     if (streamListener instanceof StreamListener) {
       streamListener.onAuthenticated();
     }
+  }
+
+  // Private methods
+  private void startBindingAndSession() {
+    Thread binder = new Thread() {
+      public void run() {
+        IQ iq;
+        iq = new IQ(IQ.Type.set, new Bind(getFullJid()));
+        iq.setId(stream.getNextStanzaId());
+
+        IQByIdListener iqlis = new IQByIdListener(iq.getId(), true);
+        stream.addStanzaInListener(iqlis);
+        stream.pushStanza(iq);
+
+        Bind b = (Bind) iqlis.waitStanza().getPayload();  // Blocking
+        stream.setBinded(b.getJid(), b.getResource());
+
+        if (!isSessionStarted() && sessionRequested) {
+          iq = new IQ(IQ.Type.set, new Session());
+          iq.setId(stream.getNextStanzaId());
+
+          iqlis = new IQByIdListener(iq.getId(), true);
+          stream.addStanzaInListener(iqlis);
+          stream.pushStanza(iq);
+
+          if (iqlis.waitStanza() != null) { // Blocking
+            stream.setSessionStarded();
+          }
+        }
+      }
+    };
+    binder.start();
   }
 }
