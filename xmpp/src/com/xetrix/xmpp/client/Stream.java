@@ -14,8 +14,8 @@ public interface Stream {
   public void setListener(StreamListener l);
   public StreamListener getListener();
 
-  public void addStanzaParser(StanzaParser h);
-  public void removeStanzaParser(StanzaParser h);
+  public void addStanzaParser(StanzaParser p);
+  public void removeStanzaParser(StanzaParser p);
   public void clearStanzaParsers();
 
   public void addStanzaInListener(StanzaListener l);
