@@ -225,6 +225,7 @@ public class Client implements ConnectionListener, StreamListener {
     stream.addStanzaParser(iqParser);
     iqParser.addPayloadParser(new BindParser());
     iqParser.addPayloadParser(new SessionParser());
+
     stream.initStream(service);
     if (connectionListener instanceof ConnectionListener) {
       connectionListener.onConnect();

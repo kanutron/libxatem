@@ -327,7 +327,6 @@ public class StandardStream implements Stream {
     boolean handled;
     try {
       while ((stanza = stanzaInQueue.take()) != null) {
-        //System.out.println("Incoming: " + stanza.toXML());
         Iterator itr;
         itr = stanzaInListeners.iterator();
         handled = false;
@@ -355,17 +354,15 @@ public class StandardStream implements Stream {
   }
 
   private void publishOutgoingStanza(Stanza stanza) {
-    //System.out.println("Outgoing: " + stanza.toXML());
-    Iterator itr;
-    itr = stanzaOutListeners.iterator();
+    Iterator itr = stanzaOutListeners.iterator();
     while(itr.hasNext()) {
       StanzaListener l = (StanzaListener)itr.next();
       if (l.wantsStanza(stanza)) {
-        if (l.processStanza(stanza)) {
-          break;
-        }
         if (l.finished()) {
           removeStanzaOutListener(l);
+        }
+        if (l.processStanza(stanza)) {
+          break;
         }
       }
     }
@@ -379,12 +376,14 @@ public class StandardStream implements Stream {
         IQ eiq = iq.toErrorIQ(
           new XMPPError(XMPPError.Type.CONTINUE, "feature-not-implemented"));
         pushStanza(eiq);
+        listener.onStreamError(eiq.getError());
       } else if (iq.getType() == IQ.Type.error) {
         listener.onStreamError(iq.getError());
       } else {
-        listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "feature-not-implemented",
-          "IQ type=result received, but no body intersted. XML=" + iq.toXML()));
+        listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "unexpected-result",
+          "IQ type=result received, but no body intersted."));
       }
     }
+    // TODO: Process other unhandled stanzas
   }
 }

@@ -89,6 +89,7 @@ public class IQParser implements StanzaParser {
       if (eventType == XmlPullParser.START_TAG) {
         if (parser.getName().equals("error")) {
           iq.setError(new XMPPError(parser));
+          iq.getError().setType(XMPPError.Type.CONTINUE); // Force type=continue
         } else {
           itr = payloadParsers.iterator();
           while(itr.hasNext()) {
