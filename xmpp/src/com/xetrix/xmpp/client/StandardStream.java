@@ -73,12 +73,12 @@ public class StandardStream implements Stream {
     return listener;
   }
 
-  public void addStanzaParser(StanzaParser h) {
-    stanzaParsers.add(h);
+  public void addStanzaParser(StanzaParser p) {
+    stanzaParsers.add(p);
   }
 
-  public void removeStanzaParser(StanzaParser h) {
-    stanzaParsers.remove(h);
+  public void removeStanzaParser(StanzaParser p) {
+    stanzaParsers.remove(p);
   }
 
   public void clearStanzaParsers() {
