@@ -255,6 +255,7 @@ public class StandardStream implements Stream {
   private void parseStanzas(Thread thread) {
     try {
       Iterator itr;
+      boolean parsed = false;
       int eventType = parser.getEventType();
 
       while (eventType != XmlPullParser.END_DOCUMENT && thread == readThread) {
@@ -262,9 +263,11 @@ public class StandardStream implements Stream {
 
         if (eventType == XmlPullParser.START_TAG && parser.getDepth() == 2) {
           itr = stanzaParsers.iterator();
+          parsed = false;
           while(itr.hasNext()) {
             StanzaParser p = (StanzaParser)itr.next();
             if (p.wantsStanza(parser)) {
+              parsed = true;
               if (!p.parseStanza(this, parser)) {
                 // Either error handling stanza or stream reset needed
                 return;
@@ -276,6 +279,10 @@ public class StandardStream implements Stream {
               }
               break; // Only first parser can process
             }
+          }
+          if (!parsed) {
+            listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "feature-not-implemented",
+              "Received not understood stanza: " + parser.getName()));
           }
         } else if (eventType == XmlPullParser.START_TAG && parser.getDepth() == 1) {
           // Handle opening stream

@@ -3,7 +3,6 @@ package com.xetrix.xmpp.stanza;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.util.StringUtils;
 
