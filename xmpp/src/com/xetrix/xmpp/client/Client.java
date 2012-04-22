@@ -5,6 +5,9 @@ import java.io.IOException;
 
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.StreamErrorHandler;
+import com.xetrix.xmpp.stanza.StreamNegotiationHandler;
+import com.xetrix.xmpp.stanza.IQStanzaHandler;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.Session;
 
@@ -206,6 +209,10 @@ public class Client implements ConnectionListener, StreamListener {
 
   // Event Handlers
   public void onConnect() {
+    stream.clearStanzaHandlers();
+    stream.addStanzaHandler(new StreamNegotiationHandler());
+    stream.addStanzaHandler(new StreamErrorHandler());
+    stream.addStanzaHandler(new IQStanzaHandler());
     stream.initStream(service);
     if (connectionListener instanceof ConnectionListener) {
       connectionListener.onConnect();
@@ -250,14 +257,25 @@ public class Client implements ConnectionListener, StreamListener {
     }
   }
 
-  public void onReadyForBindResource(Boolean required) {
+  public void onBindRequested(Boolean required) {
     if (streamListener instanceof StreamListener) {
-      streamListener.onReadyForBindResource(required);
+      streamListener.onBindRequested(required);
     }
     if (!isBinded() && required) {
       // TODO: set IQ handler by ID
       IQ iqb = new IQ(IQ.Type.set, new Bind(getFullJid()));
       stream.pushStanza(iqb);
+    }
+  }
+
+  public void onSessionRequested() {
+    if (streamListener instanceof StreamListener) {
+      streamListener.onSessionRequested();
+    }
+    if (!isSessionStarted()) {
+      // TODO: set IQ handler by ID
+      IQ iqs = new IQ(IQ.Type.set, new Session());
+      stream.pushStanza(iqs);
     }
   }
 
@@ -268,17 +286,6 @@ public class Client implements ConnectionListener, StreamListener {
     }
     if (streamListener instanceof StreamListener) {
       streamListener.onResourceBinded(bind);
-    }
-  }
-
-  public void onReadyForStartSession() {
-    if (streamListener instanceof StreamListener) {
-      streamListener.onReadyForStartSession();
-    }
-    if (!isSessionStarted()) {
-      // TODO: set IQ handler by ID
-      IQ iqs = new IQ(IQ.Type.set, new Session());
-      stream.pushStanza(iqs);
     }
   }
 

@@ -180,7 +180,7 @@ public class StandardConnection implements Connection {
   }
 
   public boolean compressionSetServerMethods(List<String> methods) {
-    if (methods.contains(Compression.zlib.toString())) {
+    if (!methods.contains(Compression.zlib.toString())) { // DEBUG: Remove the !
       try {
         Class.forName("com.jcraft.jzlib.ZOutputStream");
         compression = Compression.zlib;

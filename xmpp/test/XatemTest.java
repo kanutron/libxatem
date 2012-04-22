@@ -97,18 +97,18 @@ public class XatemTest implements ConnectionListener, StreamListener {
     Log.write(account + ": " + "Stream opened; from: " + from,7);
   }
 
-  public void onReadyForBindResource(Boolean required) {
-    Log.write(account + ": " + "Ready to bind.",6);
+  public void onBindRequested(Boolean required) {
+    Log.write(account + ": " + "Bind requested.",6);
     IQ iqb = new IQ(IQ.Type.set, new Bind(xc.getFullJid()));
     xc.pushStanza(iqb);
   }
 
-  public void onResourceBinded(Bind bind) {
-    Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
+  public void onSessionRequested() {
+    Log.write(account + ": " + "Session requested.",6);
   }
 
-  public void onReadyForStartSession() {
-    Log.write(account + ": " + "Ready to start session.",6);
+  public void onResourceBinded(Bind bind) {
+    Log.write(account + ": " + "Binded as " + xc.getFullJid(),6);
   }
 
   public void onSessionStarted(Session session) {

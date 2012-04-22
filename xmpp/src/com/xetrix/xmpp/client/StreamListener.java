@@ -9,9 +9,10 @@ public interface StreamListener {
   public void onStreamClosed();
   public void onStreamError(XMPPError e);
 
+  public void onBindRequested(Boolean required);
+  public void onSessionRequested();
+
   public void onAuthenticated();
-  public void onReadyForBindResource(Boolean required);
   public void onResourceBinded(Bind bind);
-  public void onReadyForStartSession();
   public void onSessionStarted(Session session);
 }

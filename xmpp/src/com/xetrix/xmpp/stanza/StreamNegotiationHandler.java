@@ -1,21 +1,28 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.stanza;
 
-import java.util.ArrayList;
 import java.util.List;
-import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.payload.Session;
+import java.util.ArrayList;
+
 import org.xmlpull.v1.XmlPullParser;
 
+import com.xetrix.xmpp.client.Auth;
+import com.xetrix.xmpp.client.Stream;
+import com.xetrix.xmpp.client.StreamListener;
+import com.xetrix.xmpp.client.Connection;
+import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.payload.Session;
+
 public class StreamNegotiationHandler implements StanzaHandler {
-  public boolean compression = false;
-  public boolean tls = false;
-  public boolean tlsRequired = false;
-  public boolean bind = false;
-  public boolean bindRequired = false;
-  public boolean session = false;
-  public boolean register = false;
-  public List<String> saslMechs = new ArrayList<String>();
-  public List<String> compMethods = new ArrayList<String>();
+  private boolean finished = false;
+  private boolean compression = false;
+  private boolean tls = false;
+  private boolean tlsRequired = false;
+  private boolean bind = false;
+  private boolean bindRequired = false;
+  private boolean session = false;
+  private boolean register = false;
+  private List<String> saslMechs = new ArrayList<String>();
+  private List<String> compMethods = new ArrayList<String>();
 
   private String e = "";
   private String n = "";
@@ -135,8 +142,7 @@ public class StreamNegotiationHandler implements StanzaHandler {
   }
 
   public boolean finished() {
-    // TODO: return true when no more work todo
-    return false;
+    return finished;
   }
 
   // Private methos
@@ -286,16 +292,18 @@ public class StreamNegotiationHandler implements StanzaHandler {
     }
 
     if (bind) {
-      listener.onReadyForBindResource(bindRequired);
+      listener.onBindRequested(bindRequired);
     }
 
     if (session) {
-      listener.onReadyForStartSession();
-    } else {
-      // Does not support session. Assume opened.
-      listener.onSessionStarted(new Session());
+      listener.onSessionRequested();
     }
 
+    // Report to the stream that we don't expect more stanzas
+    // So we can be removed from the handlers stack
+    finished = true;
+
+    // Return all has been handled
     return true;
   }
 

@@ -1,6 +1,7 @@
 package com.xetrix.xmpp.client;
 
 import java.util.List;
+import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -9,9 +10,7 @@ import org.xmlpull.mxp1.MXParser;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.stanza.IQ;
-import com.xetrix.xmpp.payload.Bind;
-import com.xetrix.xmpp.payload.Session;
+import com.xetrix.xmpp.stanza.StanzaHandler;
 
 public class StandardStream implements Stream {
   private Connection            conn;
@@ -69,6 +68,21 @@ public class StandardStream implements Stream {
     return listener;
   }
 
+  public void addStanzaHandler(StanzaHandler h) {
+    handlers.add(h);
+    System.out.println("Adding handler " + h.getClass().getName() + ". Total: " + handlers.size());
+  }
+
+  public void removeStanzaHandler(StanzaHandler h) {
+    handlers.remove(h);
+    //System.out.println("Removing handler " + h.getClass().getName() + ". Remaining: " + handlers.size());
+  }
+
+  public void clearStanzaHandlers() {
+    handlers.clear();
+    //System.out.println("Clearing handler stack");
+  }
+
   public boolean isOpened() {
     return opened;
   }
@@ -81,8 +95,16 @@ public class StandardStream implements Stream {
     return binded;
   }
 
+  public void setBinded(Boolean b) {
+    binded = b;
+  }
+
   public boolean isSessionStarted() {
     return sessionStarted;
+  }
+
+  public void setSessionStarded(Boolean s) {
+    sessionStarted = s;
   }
 
   public void pushStanza(String s) {
@@ -197,111 +219,60 @@ public class StandardStream implements Stream {
   }
 
   private void parseStanzas(Thread thread) {
-    handlers.clear();
-    handlers.add(new StreamNegotiationHandler());
-
     try {
+      Iterator itr;
       int eventType = parser.getEventType();
-      do {
-        if (eventType == XmlPullParser.START_TAG) {
 
-          for (StanzaHandler h: handlers) {
+      while (eventType != XmlPullParser.END_DOCUMENT && thread == readThread) {
+        eventType = parser.next();
+
+        if (eventType == XmlPullParser.START_TAG && parser.getDepth() == 2) {
+          itr = handlers.iterator();
+          while(itr.hasNext()) {
+            StanzaHandler h = (StanzaHandler)itr.next();
             if (h.wantsStanza(parser)) {
               if (!h.handleStanza(this, parser)) {
-                return; // Either error handling or stream reset needed
+                // Either error handling stanza or stream reset needed
+                return;
               } else if (h.hasStanza()) {
-                Stanza s = h.getStanza();
                 // TODO: Send stanza to interested parties
+                Stanza s = h.getStanza();
+                System.out.println(s.toXML());
               }
               if (h.finished()) {
-                //handlers.remove(h);
+                removeStanzaHandler(h);
               }
+              break; // Only first handler can process
             }
           }
-
-          if (parser.getName().equals("iq")) {
-            parseIQ(parser);
-          } else if (parser.getName().equals("error")) {
-            listener.onStreamError(new XMPPError(parser));
-            return;
-          } else if (parser.getName().equals("stream")) {
-            if ("jabber:client".equals(parser.getNamespace(null))) {
-              streamId = parser.getAttributeValue("", "id");
-              String from = parser.getAttributeValue("", "from");
-              if ("".equals(from)) {
-                streamFrom = from;
-              }
-              opened = true;
-              listener.onStreamOpened(streamFrom);
+        } else if (eventType == XmlPullParser.START_TAG && parser.getDepth() == 1) {
+          // Handle opening stream
+          if (parser.getDepth() == 1 &&
+              parser.getName().equals("stream") &&
+              parser.getNamespace().equals("http://etherx.jabber.org/streams")) {
+            streamId = parser.getAttributeValue("", "id");
+            String from = parser.getAttributeValue("", "from");
+            if (!from.equals("")) {
+              streamFrom = from;
             }
+            opened = true;
+            listener.onStreamOpened(streamFrom);
           }
-        } else if (eventType == XmlPullParser.END_TAG) {
-          if (parser.getName().equals("stream")) {
-            opened = false;
-            listener.onStreamClosed();
-            finishStream();
-            return;
-          }
+        } else {
+          System.out.println("Unhandled stanza!" + parser.getName() + "@" + parser.getDepth());
         }
-        eventType = parser.next();
-      } while (eventType != XmlPullParser.END_DOCUMENT && thread == readThread);
+      }
+
+      // End document received
+      opened = false;
+      listener.onStreamClosed();
+      finishStream();
+      return;
+
     } catch (Exception e) {
+      opened = false;
       listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL,
         "gone", "Error parsing input stream."));
     }
   }
-
-
-  public void parseIQ(XmlPullParser parser) throws Exception {
-    IQ iq = new IQ(parser);
-
-    boolean done = false;
-    while (!done) {
-      int eventType = parser.next();
-      if (eventType == XmlPullParser.START_TAG) {
-        String e = parser.getName();
-        String n = parser.getNamespace();
-
-        if (e.equals("error")) {
-          iq.setError(new XMPPError(parser));
-        } else if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
-          iq.setPayload(new Bind(parser));
-          binded = true; // TODO: check if type==result
-          listener.onResourceBinded((Bind)iq.getPayload());
-          return;
-        } else if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
-          iq.setPayload(new Session(parser));
-          sessionStarted = true; // TODO: check if type==result
-          listener.onSessionStarted((Session)iq.getPayload());
-          return;
-        } else if (e.equals("query") && n.equals("jabber:iq:roster")) {
-          //iq = parseRoster(parser);
-        } else if (e.equals("query") && n.equals("jabber:iq:auth")) {
-          //iq = parseAuthentication(parser);
-        } else if (e.equals("query") && n.equals("jabber:iq:register")) {
-          //iq = parseRegistration(parser);
-        }
-      } else if (eventType == XmlPullParser.END_TAG) {
-        if (parser.getName().equals("iq")) {
-          done = true;
-        }
-      }
-    }
-
-    // TODO: if IQ error, notify listener (continue)
-
-    // If here, the IQ was unhandled.
-    if (iq.getType() == IQ.Type.get || iq.getType() == IQ.Type.set) {
-      IQ eiq = iq.toErrorIQ(
-        new XMPPError(XMPPError.Type.CANCEL, "feature-not-implemented"));
-      pushStanza(eiq);
-      return;
-    } else {
-      // TODO: Unhandled ERROR or RESULT IQ received.
-    }
-
-    return;
-  }
-
-
 }

@@ -1,7 +1,6 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.stanza;
 
 import com.xetrix.xmpp.client.Stream;
-import com.xetrix.xmpp.stanza.Stanza;
 import org.xmlpull.v1.XmlPullParser;
 
 public interface StanzaHandler {
