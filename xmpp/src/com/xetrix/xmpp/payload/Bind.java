@@ -2,9 +2,7 @@ package com.xetrix.xmpp.payload;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import com.xetrix.xmpp.Parseable;
-
-public class Bind extends Payload implements Parseable {
+public class Bind extends Payload {
   // Bind data
   private String resource = null;
   private String jid = null;

@@ -2,10 +2,9 @@ package com.xetrix.xmpp.client;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import com.xetrix.xmpp.Parseable;
 import com.xetrix.xmpp.stanza.Stanza;
 
-public class XMPPError implements Parseable {
+public class XMPPError {
   // Class data
   private static final String DEFAULT_LANG =
     java.util.Locale.getDefault().getLanguage().toLowerCase();

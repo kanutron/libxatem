@@ -2,9 +2,7 @@ package com.xetrix.xmpp.payload;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import com.xetrix.xmpp.Parseable;
-
-public class Session extends Payload implements Parseable {
+public class Session extends Payload {
   // Constructors
   public Session() {}
   public Session(XmlPullParser parser) throws Exception {
@@ -18,11 +16,6 @@ public class Session extends Payload implements Parseable {
     // contents here
     buf.append("</session>");
     return buf.toString();
-  }
-
-  public void parse(XmlPullParser parser) throws Exception {
-    // nothing to parse
-    return;
   }
 
 }

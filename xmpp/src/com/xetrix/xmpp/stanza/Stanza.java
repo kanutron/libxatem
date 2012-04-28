@@ -3,9 +3,8 @@ package com.xetrix.xmpp.stanza;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.Parseable;
 
-public abstract class Stanza implements Parseable {
+public abstract class Stanza {
 
   // Class data
   private static String DEFAULT_XMLNS = "jabber:client";
