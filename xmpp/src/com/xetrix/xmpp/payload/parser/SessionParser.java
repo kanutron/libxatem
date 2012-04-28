@@ -36,7 +36,7 @@ public class SessionParser implements PayloadParser {
     payload = null;
 
     if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
-      payload = new Session(parser);
+      payload = new Session();
       hasPayload = true;
       finished = true;
       return true;

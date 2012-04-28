@@ -5,9 +5,6 @@ import org.xmlpull.v1.XmlPullParser;
 public class Session extends Payload {
   // Constructors
   public Session() {}
-  public Session(XmlPullParser parser) throws Exception {
-    parse(parser);
-  }
 
   // Public methods
   public String toXML() {
