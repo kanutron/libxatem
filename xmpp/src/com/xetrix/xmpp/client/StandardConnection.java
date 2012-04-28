@@ -162,9 +162,6 @@ public class StandardConnection implements Connection {
     } catch (Exception e) {
       listener.onConnectionError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
         "Error on SSL Handshake: " + e.getMessage()));
-      if (socket.isConnected()) {
-        disconnect();
-      }
     }
     return false;
   }

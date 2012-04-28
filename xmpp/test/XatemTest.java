@@ -10,8 +10,6 @@ import com.xetrix.xmpp.client.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.payload.Payload;
-import com.xetrix.xmpp.payload.Bind;
-import com.xetrix.xmpp.payload.Session;
 
 public class XatemTest implements ConnectionListener, StreamListener {
   // Constants

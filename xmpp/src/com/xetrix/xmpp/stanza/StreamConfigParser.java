@@ -312,9 +312,6 @@ public class StreamConfigParser implements StanzaParser {
     StreamListener listener = stream.getListener();
     if (conn.enableTLS()) {
       stream.initStream();
-    } else {
-      listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
-        "Start TLS failed."));
     }
     return false;
   }
@@ -324,9 +321,6 @@ public class StreamConfigParser implements StanzaParser {
     StreamListener listener = stream.getListener();
     if (conn.enableCompression()) {
       stream.initStream();
-    } else {
-      listener.onStreamError(new XMPPError(XMPPError.Type.CANCEL, "bad-request",
-        "Start compression failed."));
     }
     return false;
   }
