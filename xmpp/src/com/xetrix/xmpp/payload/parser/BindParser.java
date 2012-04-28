@@ -1,9 +1,10 @@
-package com.xetrix.xmpp.payload;
+package com.xetrix.xmpp.payload.parser;
 
 import org.xmlpull.v1.XmlPullParser;
-import com.xetrix.xmpp.payload.Session;
+import com.xetrix.xmpp.payload.Payload;
+import com.xetrix.xmpp.payload.Bind;
 
-public class SessionParser implements PayloadParser {
+public class BindParser implements PayloadParser {
   private boolean finished = false;
   private boolean hasPayload = false;
   private Payload payload = null;
@@ -20,8 +21,8 @@ public class SessionParser implements PayloadParser {
     e = parser.getName();
     n = parser.getNamespace();
 
-    if (n.equals("urn:ietf:params:xml:ns:xmpp-session") &&
-        e.equals("session")) {
+    if (n.equals("urn:ietf:params:xml:ns:xmpp-bind") &&
+        e.equals("bind")) {
       return true;
     }
 
@@ -33,8 +34,8 @@ public class SessionParser implements PayloadParser {
     hasPayload = false;
     payload = null;
 
-    if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
-      payload = new Session(parser);
+    if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
+      payload = new Bind(parser);
       hasPayload = true;
       finished = true;
       return true;

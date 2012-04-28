@@ -4,6 +4,8 @@ import java.util.List;
 import java.io.Reader;
 import java.io.Writer;
 
+import com.xetrix.xmpp.client.listener.ConnectionListener;
+
 public interface Connection {
   // Pulic methods
   public void setListener(ConnectionListener l);

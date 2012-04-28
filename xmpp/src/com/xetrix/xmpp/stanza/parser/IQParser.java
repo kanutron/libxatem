@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.stanza;
+package com.xetrix.xmpp.stanza.parser;
 
 import java.util.List;
 import java.util.Iterator;
@@ -6,9 +6,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import com.xetrix.xmpp.stanza.Stanza;
+import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.payload.PayloadParser;
+import com.xetrix.xmpp.payload.parser.PayloadParser;
 
 public class IQParser implements StanzaParser {
   private List<PayloadParser> payloadParsers = new CopyOnWriteArrayList<PayloadParser>();

@@ -1,4 +1,4 @@
-package com.xetrix.xmpp.stanza;
+package com.xetrix.xmpp.stanza.parser;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -7,10 +7,12 @@ import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.Auth;
 import com.xetrix.xmpp.client.Stream;
-import com.xetrix.xmpp.client.StreamListener;
+import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.client.Connection;
 import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.payload.Session;
+
 
 public class StreamConfigParser implements StanzaParser {
   private boolean finished = false;

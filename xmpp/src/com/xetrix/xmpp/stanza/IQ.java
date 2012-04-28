@@ -9,7 +9,7 @@ import com.xetrix.xmpp.util.StringUtils;
 public class IQ extends Stanza {
   // IQ Stanza data
   private Type       type = Type.get;
-  private Payload  payload = null;
+  private Payload    payload = null;
   private boolean    hasPayload = false;
 
   // Constructors

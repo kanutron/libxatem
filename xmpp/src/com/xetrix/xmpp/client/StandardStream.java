@@ -9,10 +9,13 @@ import java.util.concurrent.BlockingQueue;
 import org.xmlpull.mxp1.MXParser;
 import org.xmlpull.v1.XmlPullParser;
 
+import com.xetrix.xmpp.client.listener.StreamListener;
+
 import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.stanza.StanzaParser;
-import com.xetrix.xmpp.stanza.StanzaListener;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.parser.StanzaParser;
+import com.xetrix.xmpp.stanza.listener.StanzaListener;
+
 
 public class StandardStream implements Stream {
   private Connection            conn;

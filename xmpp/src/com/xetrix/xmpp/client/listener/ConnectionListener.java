@@ -1,4 +1,6 @@
-package com.xetrix.xmpp.client;
+package com.xetrix.xmpp.client.listener;
+
+import com.xetrix.xmpp.client.XMPPError;
 
 public interface ConnectionListener {
   // Event Handlers

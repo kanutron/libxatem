@@ -1,6 +1,8 @@
-package com.xetrix.xmpp.stanza;
+package com.xetrix.xmpp.stanza.listener;
 
 import org.xmlpull.v1.XmlPullParser;
+import com.xetrix.xmpp.stanza.Stanza;
+import com.xetrix.xmpp.stanza.IQ;
 
 public class IQByIdListener implements StanzaListener {
   private String expectedId = null;

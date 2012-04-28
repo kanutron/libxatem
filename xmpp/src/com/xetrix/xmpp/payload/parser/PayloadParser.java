@@ -1,5 +1,6 @@
-package com.xetrix.xmpp.payload;
+package com.xetrix.xmpp.payload.parser;
 
+import com.xetrix.xmpp.payload.Payload;
 import org.xmlpull.v1.XmlPullParser;
 
 public interface PayloadParser {

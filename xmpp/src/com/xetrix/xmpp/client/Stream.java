@@ -1,8 +1,10 @@
 package com.xetrix.xmpp.client;
 
+import com.xetrix.xmpp.client.listener.StreamListener;
+
 import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.stanza.StanzaParser;
-import com.xetrix.xmpp.stanza.StanzaListener;
+import com.xetrix.xmpp.stanza.parser.StanzaParser;
+import com.xetrix.xmpp.stanza.listener.StanzaListener;
 
 public interface Stream {
   public Auth getAuth();

@@ -18,6 +18,8 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.xetrix.xmpp.client.listener.ConnectionListener;
+
 public class StandardConnection implements Connection {
   private static final Integer SOCKET_TIMEOUT = 5000; // Milliseconds
   private static final Integer SSL_HANDSHAKE_MAX_TIME = 5000; // Milliseconds

@@ -3,16 +3,18 @@ package com.xetrix.xmpp.client;
 import java.util.List;
 import java.io.IOException;
 
+import com.xetrix.xmpp.client.listener.ConnectionListener;
+import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
-import com.xetrix.xmpp.stanza.IQParser;
-import com.xetrix.xmpp.stanza.StreamErrorParser;
-import com.xetrix.xmpp.stanza.StreamConfigParser;
-import com.xetrix.xmpp.stanza.IQByIdListener;
+import com.xetrix.xmpp.stanza.parser.IQParser;
+import com.xetrix.xmpp.stanza.parser.StreamErrorParser;
+import com.xetrix.xmpp.stanza.parser.StreamConfigParser;
+import com.xetrix.xmpp.stanza.listener.IQByIdListener;
 import com.xetrix.xmpp.payload.Bind;
-import com.xetrix.xmpp.payload.BindParser;
+import com.xetrix.xmpp.payload.parser.BindParser;
 import com.xetrix.xmpp.payload.Session;
-import com.xetrix.xmpp.payload.SessionParser;
+import com.xetrix.xmpp.payload.parser.SessionParser;
 
 public class Client implements ConnectionListener, StreamListener {
   private static final String    CLIENT_NAME = "xatem";

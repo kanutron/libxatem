@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.xetrix.xmpp.client.Client;
-import com.xetrix.xmpp.client.StreamListener;
-import com.xetrix.xmpp.client.ConnectionListener;
+import com.xetrix.xmpp.client.listener.StreamListener;
+import com.xetrix.xmpp.client.listener.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.payload.Payload;
