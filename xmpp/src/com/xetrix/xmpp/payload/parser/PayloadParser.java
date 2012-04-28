@@ -1,7 +1,8 @@
 package com.xetrix.xmpp.payload.parser;
 
-import com.xetrix.xmpp.payload.Payload;
 import org.xmlpull.v1.XmlPullParser;
+
+import com.xetrix.xmpp.payload.Payload;
 
 public interface PayloadParser {
   public boolean wantsPayload(XmlPullParser parser) throws Exception;

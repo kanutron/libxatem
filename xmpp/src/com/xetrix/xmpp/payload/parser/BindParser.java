@@ -1,6 +1,7 @@
 package com.xetrix.xmpp.payload.parser;
 
 import org.xmlpull.v1.XmlPullParser;
+
 import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.payload.Bind;
 

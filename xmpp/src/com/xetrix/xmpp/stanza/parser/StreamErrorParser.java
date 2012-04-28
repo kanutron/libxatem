@@ -5,6 +5,7 @@ import org.xmlpull.v1.XmlPullParser;
 import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.client.XMPPError;
+
 import com.xetrix.xmpp.stanza.Stanza;
 
 public class StreamErrorParser implements StanzaParser {

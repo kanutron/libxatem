@@ -1,6 +1,7 @@
 package com.xetrix.xmpp.client;
 
 import org.xmlpull.v1.XmlPullParser;
+
 import com.xetrix.xmpp.Parseable;
 import com.xetrix.xmpp.stanza.Stanza;
 

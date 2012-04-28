@@ -10,9 +10,10 @@ import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.client.Connection;
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.payload.Session;
 
+import com.xetrix.xmpp.stanza.Stanza;
+
+import com.xetrix.xmpp.payload.Session;
 
 public class StreamConfigParser implements StanzaParser {
   private boolean finished = false;

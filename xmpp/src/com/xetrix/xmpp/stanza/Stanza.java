@@ -1,8 +1,9 @@
 package com.xetrix.xmpp.stanza;
 
 import org.xmlpull.v1.XmlPullParser;
-import com.xetrix.xmpp.Parseable;
+
 import com.xetrix.xmpp.client.XMPPError;
+import com.xetrix.xmpp.Parseable;
 
 public abstract class Stanza implements Parseable {
 

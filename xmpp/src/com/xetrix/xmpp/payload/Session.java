@@ -1,7 +1,8 @@
 package com.xetrix.xmpp.payload;
 
-import com.xetrix.xmpp.Parseable;
 import org.xmlpull.v1.XmlPullParser;
+
+import com.xetrix.xmpp.Parseable;
 
 public class Session extends Payload implements Parseable {
   // Constructors

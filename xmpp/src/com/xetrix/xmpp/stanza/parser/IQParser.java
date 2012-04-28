@@ -6,10 +6,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import com.xetrix.xmpp.stanza.Stanza;
-import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.client.Stream;
 import com.xetrix.xmpp.client.XMPPError;
+
+import com.xetrix.xmpp.stanza.Stanza;
+import com.xetrix.xmpp.stanza.IQ;
+
 import com.xetrix.xmpp.payload.parser.PayloadParser;
 
 public class IQParser implements StanzaParser {
