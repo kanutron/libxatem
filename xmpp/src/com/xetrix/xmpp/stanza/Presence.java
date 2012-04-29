@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.xmlpull.v1.XmlPullParser;
 
 import com.xetrix.xmpp.client.XMPPError;
-import com.xetrix.xmpp.extension.Extension;
+import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.util.StringUtils;
 
 public class Presence extends Stanza {
@@ -18,7 +18,7 @@ public class Presence extends Stanza {
   private Show               show = Show.available;
   private Map<String,String> statusmap = new HashMap<String,String>();
   private int                priority = 0;
-  private List<Extension>    extensions = new CopyOnWriteArrayList<Extension>();
+  private List<Payload>      payloads = new CopyOnWriteArrayList<Payload>();
 
   // Constructors
   public Presence() {
@@ -160,20 +160,20 @@ public class Presence extends Stanza {
     }
   }
 
-  public boolean hasExtensions() {
-    return extensions.size() > 0;
+  public boolean hasPayloads() {
+    return payloads.size() > 0;
   }
 
-  public void addExtension(Extension e) {
-    extensions.add(e);
+  public void addPayload(Payload e) {
+    payloads.add(e);
   }
 
-  public void removeExtension(Extension e) {
-    extensions.remove(e);
+  public void removePayload(Payload e) {
+    payloads.remove(e);
   }
 
-  public void clearExtensions() {
-    extensions.clear();
+  public void clearPayloads() {
+    payloads.clear();
   }
 
   public String toXML() {
@@ -222,9 +222,9 @@ public class Presence extends Stanza {
       }
     }
 
-    // Add the extensions XML if there are at least one.
-    if (hasExtensions()) {
-      buf.append(getExtensionsXML());
+    // Add the payloads XML if there are at least one.
+    if (hasPayloads()) {
+      buf.append(getPayloadsXML());
     }
 
     // Add the error sub-packet, if there is one.
@@ -254,9 +254,9 @@ public class Presence extends Stanza {
     return buf.toString();
   }
 
-  public String getExtensionsXML() {
+  public String getPayloadsXML() {
     StringBuilder buf = new StringBuilder();
-    for (Extension e: extensions) {
+    for (Payload e: payloads) {
       buf.append(e.toXML());
     }
     return buf.toString();

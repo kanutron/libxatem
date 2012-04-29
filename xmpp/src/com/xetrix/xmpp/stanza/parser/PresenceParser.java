@@ -12,13 +12,13 @@ import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.Presence;
 
-import com.xetrix.xmpp.extension.parser.ExtensionParser;
+import com.xetrix.xmpp.payload.parser.PayloadParser;
 
 public class PresenceParser implements StanzaParser {
   private static final String NAME = "presence";
   private static final String XMLNS = "jabber:client";
 
-  private List<ExtensionParser> extensionParsers = new CopyOnWriteArrayList<ExtensionParser>();
+  private List<PayloadParser> payloadParsers = new CopyOnWriteArrayList<PayloadParser>();
 
   private boolean hasStanza = false;
   private Stanza stanza = null;
@@ -66,16 +66,16 @@ public class PresenceParser implements StanzaParser {
     return false;
   }
 
-  public void addExtensionParser(ExtensionParser p) {
-    extensionParsers.add(p);
+  public void addPayloadParser(PayloadParser p) {
+    payloadParsers.add(p);
   }
 
-  public void removeExtensionParser(ExtensionParser p) {
-    extensionParsers.remove(p);
+  public void removePayloadParser(PayloadParser p) {
+    payloadParsers.remove(p);
   }
 
-  public void clearExtensionParsers() {
-    extensionParsers.clear();
+  public void clearPayloadParsers() {
+    payloadParsers.clear();
   }
 
   // Private methods
@@ -100,17 +100,17 @@ public class PresenceParser implements StanzaParser {
           presence.setError(new XMPPError(parser));
           presence.getError().setType(XMPPError.Type.CONTINUE); // Force type=continue
         } else {
-          itr = extensionParsers.iterator();
+          itr = payloadParsers.iterator();
           while(itr.hasNext()) {
-            ExtensionParser ep = (ExtensionParser)itr.next();
-            if (ep.wantsExtension(parser)) {
-              if (!ep.parseExtension(parser)) {
+            PayloadParser ep = (PayloadParser)itr.next();
+            if (ep.wantsPayload(parser)) {
+              if (!ep.parsePayload(parser)) {
                 break;
-              } else if (ep.hasExtension()) {
-                presence.addExtension(ep.getExtension());
+              } else if (ep.hasPayload()) {
+                presence.addPayload(ep.getPayload());
               }
               if (ep.finished()) {
-                removeExtensionParser(ep);
+                removePayloadParser(ep);
               }
               break; // Only first parser can process
             }
