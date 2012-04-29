@@ -6,12 +6,12 @@ import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.payload.Session;
 
 public class SessionParser implements PayloadParser {
+  private static final String NAME = "session";
+  private static final String XMLNS = "urn:ietf:params:xml:ns:xmpp-session";
+
   private boolean finished = false;
   private boolean hasPayload = false;
   private Payload payload = null;
-
-  private String e = "";
-  private String n = "";
 
   public boolean wantsPayload(XmlPullParser parser) throws Exception {
     // Only accept payloads that are immediate child of <iq|message|presence>
@@ -19,11 +19,8 @@ public class SessionParser implements PayloadParser {
       return false;
     }
 
-    e = parser.getName();
-    n = parser.getNamespace();
-
-    if (n.equals("urn:ietf:params:xml:ns:xmpp-session") &&
-        e.equals("session")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       return true;
     }
 
@@ -35,7 +32,8 @@ public class SessionParser implements PayloadParser {
     hasPayload = false;
     payload = null;
 
-    if (e.equals("session") && n.equals("urn:ietf:params:xml:ns:xmpp-session")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       payload = new Session();
       hasPayload = true;
       finished = true;

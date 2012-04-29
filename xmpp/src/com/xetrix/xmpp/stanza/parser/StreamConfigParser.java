@@ -27,17 +27,14 @@ public class StreamConfigParser implements StanzaParser {
   private List<String> saslMechs = new ArrayList<String>();
   private List<String> compMethods = new ArrayList<String>();
 
-  private String e = "";
-  private String n = "";
-
   public boolean wantsStanza(XmlPullParser parser) throws Exception {
     // Only accept stanzas that are immediate child of <stream>
     if (parser.getDepth() != 2) {
       return false;
     }
 
-    e = parser.getName();
-    n = parser.getNamespace();
+    String e = parser.getName();
+    String n = parser.getNamespace();
 
     // Stream Features
     if (n.equals("http://etherx.jabber.org/streams") &&
@@ -72,6 +69,9 @@ public class StreamConfigParser implements StanzaParser {
 
   public boolean parseStanza(Stream stream, XmlPullParser parser) throws Exception {
     StreamListener l;
+
+    String e = parser.getName();
+    String n = parser.getNamespace();
 
     // Stream Features
     if (n.equals("http://etherx.jabber.org/streams") &&

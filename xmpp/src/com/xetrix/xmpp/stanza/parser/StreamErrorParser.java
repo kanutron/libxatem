@@ -9,8 +9,8 @@ import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.Stanza;
 
 public class StreamErrorParser implements StanzaParser {
-  private String e = "";
-  private String n = "";
+  private static final String NAME = "error";
+  private static final String XMLNS = "http://etherx.jabber.org/streams";
 
   public boolean wantsStanza(XmlPullParser parser) throws Exception {
     // Only accept stanzas that are immediate child of <stream>
@@ -18,11 +18,8 @@ public class StreamErrorParser implements StanzaParser {
       return false;
     }
 
-    e = parser.getName();
-    n = parser.getNamespace();
-
-    if (n.equals("http://etherx.jabber.org/streams") &&
-        e.equals("error")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       return true;
     }
 
@@ -31,8 +28,8 @@ public class StreamErrorParser implements StanzaParser {
   }
 
   public boolean parseStanza(Stream stream, XmlPullParser parser) throws Exception {
-    if (n.equals("http://etherx.jabber.org/streams") &&
-        e.equals("error")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       StreamListener l = stream.getListener();
       l.onStreamError(new XMPPError(parser));
       return false;

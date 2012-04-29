@@ -10,7 +10,6 @@ public class IQ extends Stanza {
   // IQ Stanza data
   private Type       type = Type.get;
   private Payload    payload = null;
-  private boolean    hasPayload = false;
 
   // Constructors
   public IQ() {
@@ -56,12 +55,11 @@ public class IQ extends Stanza {
   public void setPayload(Payload p) {
     if (p instanceof Payload || p == null) {
       payload = p;
-      hasPayload = true;
     }
   }
 
   public boolean hasPayload() {
-    return hasPayload;
+    return payload instanceof Payload;
   }
 
   public String toXML() {

@@ -13,6 +13,7 @@ import com.xetrix.xmpp.client.listener.StreamListener;
 
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.Presence; // DEBUG
 import com.xetrix.xmpp.stanza.parser.StanzaParser;
 import com.xetrix.xmpp.stanza.listener.StanzaListener;
 
@@ -395,5 +396,12 @@ public class StandardStream implements Stream {
       }
     }
     // TODO: Process other unhandled stanzas
+    if (s.getName().equals("presence")) {
+      Presence p = new Presence((Presence)s);
+      System.out.println(p.toString());
+    } else {
+      listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "unexpected-request",
+          s.getName() + " - " + s.getXmlns()));
+    }
   }
 }

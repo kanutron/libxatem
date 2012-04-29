@@ -6,12 +6,12 @@ import com.xetrix.xmpp.payload.Payload;
 import com.xetrix.xmpp.payload.Bind;
 
 public class BindParser implements PayloadParser {
+  private static final String NAME = "bind";
+  private static final String XMLNS = "urn:ietf:params:xml:ns:xmpp-bind";
+
   private boolean finished = false;
   private boolean hasPayload = false;
   private Payload payload = null;
-
-  private String e = "";
-  private String n = "";
 
   public boolean wantsPayload(XmlPullParser parser) throws Exception {
     // Only accept payloads that are immediate child of <iq|message|presence>
@@ -19,11 +19,8 @@ public class BindParser implements PayloadParser {
       return false;
     }
 
-    e = parser.getName();
-    n = parser.getNamespace();
-
-    if (n.equals("urn:ietf:params:xml:ns:xmpp-bind") &&
-        e.equals("bind")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       return true;
     }
 
@@ -35,7 +32,8 @@ public class BindParser implements PayloadParser {
     hasPayload = false;
     payload = null;
 
-    if (e.equals("bind") && n.equals("urn:ietf:params:xml:ns:xmpp-bind")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       payload = new Bind(parser);
       hasPayload = true;
       finished = true;

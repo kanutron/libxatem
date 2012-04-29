@@ -3,6 +3,9 @@ package com.xetrix.xmpp.payload;
 import org.xmlpull.v1.XmlPullParser;
 
 public class Bind extends Payload {
+  private static String NAME = "bind";
+  private static String XMLNS = "urn:ietf:params:xml:ns:xmpp-bind";
+
   // Bind data
   private String resource = null;
   private String jid = null;
@@ -44,16 +47,24 @@ public class Bind extends Payload {
     }
   }
 
+  public String getName() {
+    return NAME;
+  }
+
+  public String getXmlns() {
+    return XMLNS;
+  }
+
   public String toXML() {
     StringBuilder buf = new StringBuilder();
-    buf.append("<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">");
+    buf.append("<" + NAME + " xmlns=\"" + XMLNS + "\">");
     if (resource != null) {
       buf.append("<resource>").append(resource).append("</resource>");
     }
     if (jid != null) {
       buf.append("<jid>").append(jid).append("</jid>");
     }
-    buf.append("</bind>");
+    buf.append("</" + NAME + ">");
     return buf.toString();
   }
 
@@ -67,7 +78,8 @@ public class Bind extends Payload {
           setJid(parser.nextText());
         }
       } else if (eventType == XmlPullParser.END_TAG) {
-        if (parser.getName().equals("bind")) {
+        if (parser.getName().equals(NAME) &&
+            parser.getNamespace().equals(XMLNS)) {
           return;
         }
       }

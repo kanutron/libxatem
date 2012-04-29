@@ -7,7 +7,7 @@ import com.xetrix.xmpp.client.XMPPError;
 public abstract class Stanza {
 
   // Class data
-  private static String DEFAULT_XMLNS = "jabber:client";
+  protected static String DEFAULT_XMLNS = "jabber:client";
   protected static final String DEFAULT_LANG =
     java.util.Locale.getDefault().getLanguage().toLowerCase();
 

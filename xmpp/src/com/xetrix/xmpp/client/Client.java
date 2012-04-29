@@ -7,7 +7,9 @@ import com.xetrix.xmpp.client.listener.ConnectionListener;
 import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.Presence;
 import com.xetrix.xmpp.stanza.parser.IQParser;
+import com.xetrix.xmpp.stanza.parser.PresenceParser;
 import com.xetrix.xmpp.stanza.parser.StreamErrorParser;
 import com.xetrix.xmpp.stanza.parser.StreamConfigParser;
 import com.xetrix.xmpp.stanza.listener.IQByIdListener;
@@ -39,6 +41,7 @@ public class Client implements ConnectionListener, StreamListener {
 
   // Parsers
   private IQParser               iqParser;
+  private PresenceParser         pParser;
 
   // Session
   private boolean                sessionRequested = false;
@@ -221,12 +224,17 @@ public class Client implements ConnectionListener, StreamListener {
   // Event Handlers
   public void onConnect() {
     stream.clearStanzaParsers();
+    // Core parsers
     stream.addStanzaParser(new StreamConfigParser());
     stream.addStanzaParser(new StreamErrorParser());
+    // IQ Parser
     iqParser = new IQParser();
-    stream.addStanzaParser(iqParser);
     iqParser.addPayloadParser(new BindParser());
     iqParser.addPayloadParser(new SessionParser());
+    stream.addStanzaParser(iqParser);
+    // Presence parser
+    pParser = new PresenceParser();
+    stream.addStanzaParser(pParser);
 
     stream.initStream(service);
     if (connectionListener instanceof ConnectionListener) {

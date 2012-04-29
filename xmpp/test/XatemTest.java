@@ -9,6 +9,7 @@ import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.client.listener.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.IQ;
+import com.xetrix.xmpp.stanza.Presence;
 import com.xetrix.xmpp.payload.Payload;
 
 public class XatemTest implements ConnectionListener, StreamListener {
@@ -118,11 +119,16 @@ public class XatemTest implements ConnectionListener, StreamListener {
       public String toXML() {
         return "<query xmlns=\"jabber:iq:roster\"></query>";
       };
+      public String getXmlns() {return null;}
+      public String getName() {return null;}
     });
     iq.setFrom(xc.getFullJid());
     iq.setId(xc.getNextStanzaId());
     xc.pushStanza(iq);
-    xc.pushStanza("<presence></presence>");
+
+    Presence p = new Presence(null, Presence.Show.away);
+    xc.pushStanza(p);
+    Log.write(account + ": " + "Presence sent: " + p.toXML(),7);
   }
 
   public void onStreamClosed() {

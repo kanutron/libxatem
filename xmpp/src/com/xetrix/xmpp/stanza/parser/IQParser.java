@@ -15,13 +15,13 @@ import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.payload.parser.PayloadParser;
 
 public class IQParser implements StanzaParser {
+  private static final String NAME = "iq";
+  private static final String XMLNS = "jabber:client";
+
   private List<PayloadParser> payloadParsers = new CopyOnWriteArrayList<PayloadParser>();
 
   private boolean hasStanza = false;
   private Stanza stanza = null;
-
-  private String e = "";
-  private String n = "";
 
   public boolean wantsStanza(XmlPullParser parser) throws Exception {
     // Only accept stanzas that are immediate child of <stream>
@@ -29,11 +29,8 @@ public class IQParser implements StanzaParser {
       return false;
     }
 
-    e = parser.getName();
-    n = parser.getNamespace();
-
-    if (n.equals("jabber:client") &&
-        e.equals("iq")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       return true;
     }
 
@@ -45,7 +42,8 @@ public class IQParser implements StanzaParser {
     hasStanza = false;
     stanza = null;
 
-    if (e.equals("iq") && n.equals("jabber:client")) {
+    if (NAME.equals(parser.getName()) &&
+        XMLNS.equals(parser.getNamespace())) {
       stanza = parseIQ(parser);
       if (stanza instanceof IQ) {
         hasStanza = true;
@@ -112,9 +110,8 @@ public class IQParser implements StanzaParser {
           }
         }
       } else if (eventType == XmlPullParser.END_TAG) {
-        String e = parser.getName();
-        String n = parser.getNamespace();
-        if (e.equals("iq") && n.equals("jabber:client")) {
+        if (NAME.equals(parser.getName()) &&
+            XMLNS.equals(parser.getNamespace())) {
           done = true;
         }
       }
