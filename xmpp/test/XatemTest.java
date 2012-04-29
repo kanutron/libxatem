@@ -149,17 +149,12 @@ public class XatemTest implements ConnectionListener, StreamListener {
 
   // ////////////////////////////////////////////////
 
-  public static void banner() {
-    System.out.println(PROG_NAME + " " + VERSION);
-    System.out.println(COPYRIGHT + "\n");
-  }
-
   public static void main(String args[]) {
     final Properties prop = new Properties();
     try {
       prop.load(new FileInputStream("test/xatemtester.properties"));
     } catch (Exception e) {
-      Log.write("No properties file found for account test/xatemtester.properties", 1);
+      Log.write("No properties file found: test/xatemtester.properties", 1);
       return;
     }
 
