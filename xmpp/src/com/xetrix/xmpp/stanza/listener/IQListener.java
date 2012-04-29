@@ -5,6 +5,7 @@ import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
 
 public class IQListener implements StanzaListener {
+  // TODO: Should be a queue!
   private IQ iq = null;
 
   private boolean exclusive = false;

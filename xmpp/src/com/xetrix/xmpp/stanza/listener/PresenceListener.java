@@ -5,6 +5,7 @@ import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.Presence;
 
 public class PresenceListener implements StanzaListener {
+  // TODO: Should be a queue!
   private Presence presence = null;
 
   private boolean exclusive = false;
