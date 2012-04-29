@@ -28,8 +28,9 @@ public class Presence extends Stanza {
     super(pr);
     setType(pr.getType());
     setShow(pr.getShow());
-    setPriority(pr.getPriority());
     setStatus(pr.getStatusMap());
+    setPriority(pr.getPriority());
+    setPayloads(pr.getPayloads());
   }
   public Presence(XmlPullParser parser) throws Exception {
     parse(parser);
@@ -174,6 +175,14 @@ public class Presence extends Stanza {
 
   public void clearPayloads() {
     payloads.clear();
+  }
+
+  public void setPayloads(List<Payload> ps) {
+    payloads = ps;
+  }
+
+  public List<Payload> getPayloads() {
+    return payloads;
   }
 
   public String toXML() {

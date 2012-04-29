@@ -14,9 +14,9 @@ import com.xetrix.xmpp.client.listener.StreamListener;
 import com.xetrix.xmpp.stanza.Stanza;
 import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.stanza.Presence; // DEBUG
+import com.xetrix.xmpp.stanza.Message; // DEBUG
 import com.xetrix.xmpp.stanza.parser.StanzaParser;
 import com.xetrix.xmpp.stanza.listener.StanzaListener;
-
 
 public class StandardStream implements Stream {
   private Connection            conn;
@@ -399,6 +399,9 @@ public class StandardStream implements Stream {
     if (s.getName().equals("presence")) {
       Presence p = new Presence((Presence)s);
       System.out.println(p.toString());
+    } else if (s.getName().equals("message")) {
+      Message m = new Message((Message)s);
+      System.out.println(m.toString());
     } else {
       listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "unexpected-request",
           s.getName() + " - " + s.getXmlns()));
