@@ -175,9 +175,11 @@ public class StandardStream implements Stream {
     initWriter();
     initIncomingPublisher();
 
+    // TODO: add default lang
     pushStanza("<stream:stream to=\"" + streamFrom +
       "\" xmlns:stream=\"http://etherx.jabber.org/streams\" " +
-      "xmlns=\"jabber:client\" version=\"1.0\">");
+      "xmlns=\"jabber:client\" version=\"1.0\" xml:lang=\"" +
+      Stanza.getDefaultLanguage() + "\">");
   }
 
   public void initStream() {

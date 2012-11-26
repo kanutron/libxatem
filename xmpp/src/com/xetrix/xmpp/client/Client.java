@@ -211,10 +211,6 @@ public class Client implements ConnectionListener, StreamListener {
     conn.disconnect();
   }
 
-  public void pushStanza(String s) {
-    stream.pushStanza(s);
-  }
-
   public void pushStanza(Stanza s) {
     stream.pushStanza(s);
   }
