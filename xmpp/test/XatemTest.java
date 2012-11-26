@@ -56,6 +56,7 @@ public class XatemTest implements ConnectionListener, StreamListener {
   }
 
   public void connect() {
+    Log.write("Connecting: " + account, 6);
     xc.connect(this.socksec);
   }
 
