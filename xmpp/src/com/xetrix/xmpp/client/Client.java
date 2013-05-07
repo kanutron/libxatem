@@ -14,6 +14,7 @@ import com.xetrix.xmpp.stanza.parser.MessageParser;
 import com.xetrix.xmpp.stanza.parser.StreamErrorParser;
 import com.xetrix.xmpp.stanza.parser.StreamConfigParser;
 import com.xetrix.xmpp.stanza.listener.IQByIdListener;
+import com.xetrix.xmpp.stanza.listener.StanzaListener;
 import com.xetrix.xmpp.payload.Bind;
 import com.xetrix.xmpp.payload.parser.BindParser;
 import com.xetrix.xmpp.payload.Session;
@@ -213,6 +214,14 @@ public class Client implements ConnectionListener, StreamListener {
 
   public void pushStanza(Stanza s) {
     stream.pushStanza(s);
+  }
+
+  public void addStanzaInListener(StanzaListener l) {
+    stream.addStanzaInListener(l);
+  }
+
+  public void addStanzaOutListener(StanzaListener l) {
+    stream.addStanzaOutListener(l);
   }
 
   public String getNextStanzaId() {
