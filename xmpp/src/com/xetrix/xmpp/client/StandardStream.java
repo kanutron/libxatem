@@ -92,12 +92,10 @@ public class StandardStream implements Stream {
 
   public void addStanzaInListener(StanzaListener l) {
     stanzaInListeners.add(l);
-    //System.out.println("Adding inc. listener " + l.getClass().getName() + ". Total: " + stanzaInListeners.size());
   }
 
   public void removeStanzaInListener(StanzaListener l) {
     stanzaInListeners.remove(l);
-    //System.out.println("Removing inc. listener " + l.getClass().getName() + ". Remaining: " + stanzaInListeners.size());
   }
 
   public void clearStanzaInListeners() {
@@ -106,12 +104,10 @@ public class StandardStream implements Stream {
 
   public void addStanzaOutListener(StanzaListener l) {
     stanzaOutListeners.add(l);
-    //System.out.println("Adding out. listener " + l.getClass().getName() + ". Total: " + stanzaOutListeners.size());
   }
 
   public void removeStanzaOutListener(StanzaListener l) {
     stanzaOutListeners.remove(l);
-    //System.out.println("Removing out. listener " + l.getClass().getName() + ". Remaining: " + stanzaOutListeners.size());
   }
 
   public void clearStanzaOutListeners() {
@@ -400,10 +396,10 @@ public class StandardStream implements Stream {
     // TODO: Process other unhandled stanzas
     if (s.getName().equals("presence")) {
       Presence p = new Presence((Presence)s);
-      System.out.println(p.toString());
+      System.out.println("Unhandled PRESENCE: " + p.toString());
     } else if (s.getName().equals("message")) {
       Message m = new Message((Message)s);
-      System.out.println(m.toString());
+      System.out.println("Unhandled MESSAGE: " + m.toString());
     } else {
       listener.onStreamError(new XMPPError(XMPPError.Type.CONTINUE, "unexpected-request",
           s.getName() + " - " + s.getXmlns()));
