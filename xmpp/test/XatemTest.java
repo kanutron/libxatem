@@ -2,7 +2,23 @@ package com.xetrix;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.URLConnection;
 
 import com.xetrix.xmpp.client.Client;
 import com.xetrix.xmpp.client.listener.StreamListener;
@@ -10,13 +26,18 @@ import com.xetrix.xmpp.client.listener.ConnectionListener;
 import com.xetrix.xmpp.client.XMPPError;
 import com.xetrix.xmpp.stanza.IQ;
 import com.xetrix.xmpp.stanza.Presence;
+import com.xetrix.xmpp.stanza.listener.PresenceListener;
 import com.xetrix.xmpp.payload.Payload;
+
 
 public class XatemTest implements ConnectionListener, StreamListener {
   // Constants
   private static final String    PROG_NAME = "XAT'EM Tester - A Jabber client by XETRIX";
   private static final String    VERSION = "0.1";
   private static final String    COPYRIGHT = "(c) 2011 - XETRIX";
+
+  private static final SimpleDateFormat
+                                 DATE_FORMATTER = new SimpleDateFormat("dd-MM HH:mm:ss");
 
   private String     account;
 
@@ -28,14 +49,17 @@ public class XatemTest implements ConnectionListener, StreamListener {
   private Integer    socksec;
   private Client     xc;
 
+  private String     webServiceURL;
+
   public XatemTest(String ac, Properties prop) {
-    account = ac;
-    username = prop.getProperty(ac + ".username");
-    password = prop.getProperty(ac + ".password");
-    resource = prop.getProperty(ac + ".resource");
-    server   = prop.getProperty(ac + ".host");
-    port     = Integer.parseInt(prop.getProperty(ac + ".port"));
-    socksec  = Integer.parseInt(prop.getProperty(ac + ".securitymode"));
+    webServiceURL = prop.getProperty("webservice");
+    account       = ac;
+    username      = prop.getProperty(ac + ".username");
+    password      = prop.getProperty(ac + ".password");
+    resource      = prop.getProperty(ac + ".resource");
+    server        = prop.getProperty(ac + ".host");
+    port          = Integer.parseInt(prop.getProperty(ac + ".port"));
+    socksec       = Integer.parseInt(prop.getProperty(ac + ".securitymode"));
   }
 
   public void start() {
@@ -63,6 +87,7 @@ public class XatemTest implements ConnectionListener, StreamListener {
   public void init() {
     Log.write("Initiating client: " + account, 6);
     this.xc = new Client();
+
     if (this.resource!="") {
       this.xc.setUserData(username, password, resource, 24, server, port);
     } else {
@@ -127,9 +152,44 @@ public class XatemTest implements ConnectionListener, StreamListener {
     iq.setId(xc.getNextStanzaId());
     xc.pushStanza(iq);
 
+    // Set own presence
     Presence p = new Presence(null, Presence.Show.away);
     xc.pushStanza(p);
     Log.write(account + ": " + "Presence sent: " + p.toXML(),7);
+
+    // Listen for presences and act accordingly
+    PresenceListener plis = new PresenceListener();
+    xc.addStanzaInListener(plis);
+
+    // Process incoming presence stanzas
+    HashMap<String,String> hmData = new HashMap<String,String>();
+    Date todaysDate = new java.util.Date();
+    String formattedDate;
+
+    while (true) {
+      p = plis.waitStanza(); // Blocking
+      Log.write(p.toString(),7);
+
+      todaysDate = new java.util.Date();
+      formattedDate = DATE_FORMATTER.format(todaysDate);
+
+      hmData.put("_packetType", "presence");
+      hmData.put("date", formattedDate);
+      hmData.put("from", p.getFrom());
+      hmData.put("type", p.getType().toString());
+      try {
+        hmData.put("mode", p.getShow().toString());
+      } catch (Exception e) {
+        hmData.put("mode", "null");
+      }
+      hmData.put("priority", Integer.toString(p.getPriority()));
+      hmData.put("status", p.getStatus());
+      hmData.put("xml", p.toXML());
+
+      PostData(hmData);
+      plis.setProcessed();
+      hmData.clear();
+    }
   }
 
   public void onStreamClosed() {
@@ -147,6 +207,63 @@ public class XatemTest implements ConnectionListener, StreamListener {
   public void onAuthenticated() {
     Log.write(account + ": " + "Authenticated",6);
   }
+
+	public String PackHashMap(HashMap<String,String> hmData) {
+		String data = "";
+		hmData.put("accountUsername", username);
+		hmData.put("accountResource", resource);
+		hmData.put("accountPriority", "0");
+		hmData.put("accountServer", server);
+		hmData.put("accountPort", port.toString());
+		int n = hmData.size();
+
+		Set set = hmData.entrySet();
+		Iterator i = set.iterator();
+		while(i.hasNext()) {
+			Map.Entry me = (Map.Entry)i.next();
+			String key = (String)me.getKey();
+			String value = "n/a";
+			try {
+				value = URLEncoder.encode((String)me.getValue(), "UTF-8");
+			} catch (UnsupportedEncodingException e ) {
+				value = "";
+			} catch (Exception e) {
+				value = "";
+			}
+			data += key + "=" + value + "&";
+		}
+		return data;
+	}
+
+	public void PostData(HashMap<String,String> hmData) {
+		String data = PackHashMap(hmData);
+		try {
+			URL url = new URL(webServiceURL);
+			URLConnection uconn = url.openConnection();
+			uconn.setDoOutput(true);
+			OutputStreamWriter wr = new OutputStreamWriter(uconn.getOutputStream());
+			wr.write(data);
+			wr.flush();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(uconn.getInputStream()));
+			String line;
+			Integer line_n=0;
+			Boolean isok = false;
+			while ((line = rd.readLine()) != null) {
+				line_n++;
+				if (line_n==1 && Integer.parseInt(line.substring(0,3)) == 200) {
+					isok = true;
+				} else if (!isok) {
+					Log.write(line,3);
+				} else {
+					Log.write(line,7);
+				}
+			}
+			wr.close();
+			rd.close();
+		} catch (Exception e) {
+			Log.write("POST RESULTS: " + e.toString(),3);
+		}
+	}
 
   // ////////////////////////////////////////////////
 
