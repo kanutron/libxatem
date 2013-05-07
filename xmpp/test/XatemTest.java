@@ -162,16 +162,13 @@ public class XatemTest implements ConnectionListener, StreamListener {
     xc.addStanzaInListener(plis);
 
     // Process incoming presence stanzas
-    HashMap<String,String> hmData = new HashMap<String,String>();
-    Date todaysDate = new java.util.Date();
-    String formattedDate;
-
     while (true) {
       p = plis.waitStanza(); // Blocking
-      Log.write(p.toString(),7);
+      Log.write(p.toString(),6);
 
-      todaysDate = new java.util.Date();
-      formattedDate = DATE_FORMATTER.format(todaysDate);
+      HashMap<String,String> hmData = new HashMap<String,String>();
+      Date todaysDate = new java.util.Date();
+      String formattedDate = DATE_FORMATTER.format(todaysDate);
 
       hmData.put("_packetType", "presence");
       hmData.put("date", formattedDate);
@@ -188,7 +185,6 @@ public class XatemTest implements ConnectionListener, StreamListener {
 
       PostData(hmData);
       plis.setProcessed();
-      hmData.clear();
     }
   }
 
@@ -208,62 +204,62 @@ public class XatemTest implements ConnectionListener, StreamListener {
     Log.write(account + ": " + "Authenticated",6);
   }
 
-	public String PackHashMap(HashMap<String,String> hmData) {
-		String data = "";
-		hmData.put("accountUsername", username);
-		hmData.put("accountResource", resource);
-		hmData.put("accountPriority", "0");
-		hmData.put("accountServer", server);
-		hmData.put("accountPort", port.toString());
-		int n = hmData.size();
+  public String PackHashMap(HashMap<String,String> hmData) {
+    String data = "";
+    hmData.put("accountUsername", username);
+    hmData.put("accountResource", resource);
+    hmData.put("accountPriority", "0");
+    hmData.put("accountServer", server);
+    hmData.put("accountPort", port.toString());
+    int n = hmData.size();
 
-		Set set = hmData.entrySet();
-		Iterator i = set.iterator();
-		while(i.hasNext()) {
-			Map.Entry me = (Map.Entry)i.next();
-			String key = (String)me.getKey();
-			String value = "n/a";
-			try {
-				value = URLEncoder.encode((String)me.getValue(), "UTF-8");
-			} catch (UnsupportedEncodingException e ) {
-				value = "";
-			} catch (Exception e) {
-				value = "";
-			}
-			data += key + "=" + value + "&";
-		}
-		return data;
-	}
+    Set set = hmData.entrySet();
+    Iterator i = set.iterator();
+    while(i.hasNext()) {
+      Map.Entry me = (Map.Entry)i.next();
+      String key = (String)me.getKey();
+      String value = "n/a";
+      try {
+        value = URLEncoder.encode((String)me.getValue(), "UTF-8");
+      } catch (UnsupportedEncodingException e ) {
+        value = "";
+      } catch (Exception e) {
+        value = "";
+      }
+      data += key + "=" + value + "&";
+    }
+    return data;
+  }
 
-	public void PostData(HashMap<String,String> hmData) {
-		String data = PackHashMap(hmData);
-		try {
-			URL url = new URL(webServiceURL);
-			URLConnection uconn = url.openConnection();
-			uconn.setDoOutput(true);
-			OutputStreamWriter wr = new OutputStreamWriter(uconn.getOutputStream());
-			wr.write(data);
-			wr.flush();
-			BufferedReader rd = new BufferedReader(new InputStreamReader(uconn.getInputStream()));
-			String line;
-			Integer line_n=0;
-			Boolean isok = false;
-			while ((line = rd.readLine()) != null) {
-				line_n++;
-				if (line_n==1 && Integer.parseInt(line.substring(0,3)) == 200) {
-					isok = true;
-				} else if (!isok) {
-					Log.write(line,3);
-				} else {
-					Log.write(line,7);
-				}
-			}
-			wr.close();
-			rd.close();
-		} catch (Exception e) {
-			Log.write("POST RESULTS: " + e.toString(),3);
-		}
-	}
+  public void PostData(HashMap<String,String> hmData) {
+    String data = PackHashMap(hmData);
+    try {
+      URL url = new URL(webServiceURL);
+      URLConnection uconn = url.openConnection();
+      uconn.setDoOutput(true);
+      OutputStreamWriter wr = new OutputStreamWriter(uconn.getOutputStream());
+      wr.write(data);
+      wr.flush();
+      BufferedReader rd = new BufferedReader(new InputStreamReader(uconn.getInputStream()));
+      String line;
+      Integer line_n=0;
+      Boolean isok = false;
+      while ((line = rd.readLine()) != null) {
+        line_n++;
+        if (line_n==1 && Integer.parseInt(line.substring(0,3)) == 200) {
+          isok = true;
+        } else if (!isok) {
+          Log.write(line,3);
+        } else {
+          Log.write(line,7);
+        }
+      }
+      wr.close();
+      rd.close();
+    } catch (Exception e) {
+      Log.write("POST RESULTS: " + e.toString(),3);
+    }
+  }
 
   // ////////////////////////////////////////////////
 
