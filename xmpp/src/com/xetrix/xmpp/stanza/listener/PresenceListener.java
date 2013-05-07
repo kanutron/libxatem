@@ -10,11 +10,16 @@ public class PresenceListener implements StanzaListener {
 
   private boolean exclusive = false;
   private boolean finished = false;
+  private boolean onlyonce = false;
 
   // Constructors
   public PresenceListener() {}
   public PresenceListener(boolean exclusiveAccess) {
     exclusive = exclusiveAccess;
+  }
+  public PresenceListener(boolean exclusiveAccess, boolean onlyOnce) {
+    exclusive = exclusiveAccess;
+    onlyonce = onlyOnce;
   }
 
   // Interface methods
@@ -27,9 +32,13 @@ public class PresenceListener implements StanzaListener {
 
   public synchronized boolean processStanza(Stanza s) {
     presence = (Presence)s;
-    finished = true;
+    finished = onlyonce;
     notifyAll();
     return exclusive;
+  }
+
+  public void setProcessed() {
+    presence = null;
   }
 
   public boolean finished() {
